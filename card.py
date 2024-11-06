@@ -23,7 +23,7 @@ class Card:
         "2": 12,
     }
 
-    def __init__(self, suit, rank):
+    def __init__(self, suit: str, rank: str):
         self.suit = suit
         self.rank = rank
 
@@ -109,26 +109,29 @@ def is_valid_combination(cards: Cards):
 
 
 class Play:
+    """Represent a played combination. Easy to compare."""
+
     def __init__(self, cards: Cards, combination: CardCombination):
+        """Initialize a Play object, standardizing the order of cards."""
         self.cards: Cards = cards
         self.combination: CardCombination = combination
 
-    def __lt__(self, other: "Play"):
-        """Assume all plays are valid."""
         match self.combination:
-            case CardCombination.SINGLE | CardCombination.TRIPLE:
-                return self.cards[0] < other.cards[0]
-            case CardCombination.PAIR:
-                if self.cards[0].rank == other.cards[0].rank:
-                    return max([c.suit_index() for c in self.cards]) < max(
-                        [c.suit_index() for c in other.cards]
-                    )
-                else:
-                    return self.cards[0].rank < other.cards[0].rank
-            case CardCombination.TRIPLE:
-                return self.cards[0].rank < other.cards[0].rank
-            case _:  # ANY
-                return True
+            # Prioritize the tiebreaker case at the end
+            # Singles and Triples don't require reordering
+            case CardCombination.PAIR | CardCombination.STRAIGHT:
+                self.cards = sorted(self.cards)
+            # Put the more frequent ranks at the back
+            # Full House [Double, Triple]
+            # Four of a Kind [Single, Quadruple]
+            case CardCombination.FULLHOUSE | CardCombination.FOUROFAKIND:
+                freq = Counter([c.rank for c in self.cards])
+                self.cards = sorted(self.cards, key=lambda x: freq[x.rank])
+            case CardCombination.ANY:
+                assert False, "Combination cannot be declared as ANY"
+
+    def __lt__(self, other: "Play"):
+        return self.cards[-1] < other.cards[-1]
 
 
 class Deck:
