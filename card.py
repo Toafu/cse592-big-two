@@ -30,13 +30,13 @@ class Card:
     def __repr__(self):
         return f"{self.rank} of {self.suit}"
 
-    def __lt__(self, other):
+    def __lt__(self, other: "Card"):
         return (self.rank_index(), self.suit_index()) < (
             other.rank_index(),
             other.suit_index(),
         )
 
-    def __gt__(self, other):
+    def __gt__(self, other: "Card"):
         return (self.rank_index(), self.suit_index()) > (
             other.rank_index(),
             other.suit_index(),
@@ -106,6 +106,29 @@ def is_valid_combination(cards: Cards):
         or is_full_house(cards)
         or is_four_of_a_kind(cards)
     )
+
+
+class Play:
+    def __init__(self, cards: Cards, combination: CardCombination):
+        self.cards: Cards = cards
+        self.combination: CardCombination = combination
+
+    def __lt__(self, other: "Play"):
+        """Assume all plays are valid."""
+        match self.combination:
+            case CardCombination.SINGLE | CardCombination.TRIPLE:
+                return self.cards[0] < other.cards[0]
+            case CardCombination.PAIR:
+                if self.cards[0].rank == other.cards[0].rank:
+                    return max([c.suit_index() for c in self.cards]) < max(
+                        [c.suit_index() for c in other.cards]
+                    )
+                else:
+                    return self.cards[0].rank < other.cards[0].rank
+            case CardCombination.TRIPLE:
+                return self.cards[0].rank < other.cards[0].rank
+            case _:  # ANY
+                return True
 
 
 class Deck:

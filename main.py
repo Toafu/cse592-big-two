@@ -1,9 +1,7 @@
-from collections import Counter
 from player import HumanPlayer, Player
 from card import Card, CardCombination, Deck
 
 
-# Game Class
 class BigTwoGame:
     def __init__(self):
         self.deck = Deck()
@@ -52,7 +50,6 @@ class BigTwoGame:
                 break
 
 
-# Run the game
 if __name__ == "__main__":
     game = BigTwoGame()
     game.start()

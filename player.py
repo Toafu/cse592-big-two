@@ -1,37 +1,47 @@
-import random
 from bisect import bisect_right
 import itertools
 import typing
-from collections import Counter
 from card import Card, CardCombination, is_valid_combination
 
-Play = typing.List[Card]
+Cards = typing.List[Card]
 
 
 class Player:
     def __init__(self, name, hand):
         self.name = name
-        self.hand = sorted(hand)
+        self.hand: Cards = sorted(hand)
 
     def find_play(
         self,
-        last_play: Play = None,
+        last_play: Cards = None,
         current_combination: CardCombination = CardCombination.ANY,
-    ):
+    ) -> list[Cards]:
         """
         Return all valid plays compatible with the current combination.
 
         Filter out all plays worse than last_play.
         """
+
         match current_combination:
             case CardCombination.SINGLE:
-                return self.hand[bisect_right(self.hand, last_play[0]) : :]
+                return [
+                    [self.hand[i]]
+                    for i in range(
+                        bisect_right(self.hand, last_play[0]), len(self.hand)
+                    )
+                ]
             case CardCombination.PAIR:
+                plays: list[Cards] = []
+                best_in_play: Card = max(last_play)
+                i = bisect_right(self.hand, best_in_play)
                 a: list = []
-                cur_number = self.hand[0]
-                c: Card
-                for c in self.hand:
-                    pass
+                cur_rank = self.hand[i].rank
+                while i < len(self.hand):
+                    if self.hand[i].rank == cur_rank:
+                        a.append(self.hand[i])
+                        i += 1
+                    else:
+                        pass
 
         for combo_size in [1, 2, 3, 5]:  # Try different combination sizes
             possible_plays = itertools.combinations(self.hand, combo_size)
@@ -41,7 +51,6 @@ class Player:
         return len(self.hand) > 0
 
 
-# Human Player Class
 class HumanPlayer(Player):
     def find_play(self, last_play=None):
         print(f"Your hand: {[str(card) for card in self.hand]}")
