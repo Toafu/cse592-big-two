@@ -25,7 +25,7 @@ class BigTwoGame:
         player = self.players[self.current_player_index]
         print(f"\n{player.name}'s turn")
 
-        play = player.find_play(self.last_play)
+        play = player.find_plays(self.last_play)
         if play:
             print(f"{player.name} plays: {play}")
             self.last_play = [play]

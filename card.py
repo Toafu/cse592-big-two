@@ -50,6 +50,7 @@ class Card:
 
 
 class CardCombination(Enum):
+    INVALID = -999
     ANY = -1
     SINGLE = 0
     PAIR = 1
@@ -62,19 +63,19 @@ class CardCombination(Enum):
 Cards = typing.List[Card]
 
 
-def is_single(cards: Cards):
+def is_single(cards: Cards) -> bool:
     return len(cards) == 1
 
 
-def is_pair(cards: Cards):
+def is_pair(cards: Cards) -> bool:
     return len(cards) == 2 and cards[0].rank == cards[1].rank
 
 
-def is_triple(cards: Cards):
+def is_triple(cards: Cards) -> bool:
     return len(cards) == 3 and len(set(card.rank for card in cards)) == 1
 
 
-def is_straight(cards: Cards):
+def is_straight(cards: Cards) -> bool:
     if len(cards) != 5:
         return False
     sorted_cards = sorted(cards, key=lambda c: c.rank_index())
@@ -87,17 +88,17 @@ def is_straight(cards: Cards):
     return True
 
 
-def is_full_house(cards: Cards):
+def is_full_house(cards: Cards) -> bool:
     rank_counts = Counter(card.rank for card in cards)
     return sorted(rank_counts.values()) == [2, 3]
 
 
-def is_four_of_a_kind(cards: Cards):
+def is_four_of_a_kind(cards: Cards) -> bool:
     rank_counts = Counter(card.rank for card in cards)
     return 4 in rank_counts.values() and len(cards) == 5
 
 
-def is_valid_combination(cards: Cards):
+def is_valid_combination(cards: Cards) -> bool:
     return (
         is_single(cards)
         or is_pair(cards)
@@ -106,6 +107,26 @@ def is_valid_combination(cards: Cards):
         or is_full_house(cards)
         or is_four_of_a_kind(cards)
     )
+
+
+def identify_combination(cards: Cards) -> CardCombination:
+    match len(cards):
+        case 1:
+            return CardCombination.SINGLE
+        case 2:
+            if is_pair(cards):
+                return CardCombination.PAIR
+        case 3:
+            if is_triple(cards):
+                return CardCombination.TRIPLE
+        case 5:
+            if is_four_of_a_kind(cards):
+                return CardCombination.FOUROFAKIND
+            if is_straight(cards):
+                return CardCombination.STRAIGHT
+            if is_full_house(cards):
+                return CardCombination.FULLHOUSE
+    return CardCombination.INVALID
 
 
 class Play:

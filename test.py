@@ -25,6 +25,7 @@ def test_compare_triples():
 
     assert fours < aces
 
+
 def test_compare_fullhouses():
     FULLHOUSE = CardCombination.FULLHOUSE
 
@@ -46,7 +47,8 @@ def test_compare_fullhouses():
         Card("Hearts", "5"),
     ]
 
-    assert(Play(fullhouse_low, FULLHOUSE) < Play(fullhouse_high, FULLHOUSE))
+    assert Play(fullhouse_low, FULLHOUSE) < Play(fullhouse_high, FULLHOUSE)
+
 
 def test_compare_fourofakinds():
     FOUROFAKIND = CardCombination.FOUROFAKIND
@@ -69,7 +71,9 @@ def test_compare_fourofakinds():
         Card("Spades", "6"),
     ]
 
-    assert(Play(fourofakind_low, FOUROFAKIND) < Play(fourofakind_high, FOUROFAKIND))
+    assert Play(fourofakind_low, FOUROFAKIND) < Play(
+        fourofakind_high, FOUROFAKIND
+    )
 
 
 def test_validate_singles():
@@ -84,7 +88,7 @@ def test_validate_singles():
     p = Player("Singleton", hand)
     last_play: Cards = [Card("Hearts", "8")]
     combo = CardCombination.SINGLE
-    available_plays = p.find_play(last_play, combo)
+    available_plays = p.find_plays(last_play, combo)
 
     split = bisect_right(p.hand, last_play[0])
     unavailable_plays = [[i] for i in p.hand[0:split]]
@@ -129,3 +133,36 @@ def test_construct_plays():
     assert fourofakind_play.cards[0].rank == "4"
     for i in range(1, len(fourofakind)):
         assert fourofakind_play.cards[i].rank == "7"
+
+
+def test_identify_combinations():
+    hand = [Card("Diamonds", "2")]
+    assert identify_combination(hand) == CardCombination.SINGLE
+
+    hand = [Card("Diamonds", "2"), Card("Clubs", "7")]
+    assert identify_combination(hand) == CardCombination.INVALID
+
+    hand = []
+    assert identify_combination(hand) == CardCombination.INVALID
+
+    hand = [Card("Diamonds", "2"), Card("Clubs", "2")]
+    assert identify_combination(hand) == CardCombination.PAIR
+
+    # Straights must be consecutive increasing rank priority
+    hand = [
+        Card("Diamonds", "2"),
+        Card("Diamonds", "3"),
+        Card("Diamonds", "4"),
+        Card("Diamonds", "5"),
+        Card("Diamonds", "6"),
+    ]
+    assert identify_combination(hand) == CardCombination.INVALID
+
+    hand = [
+        Card("Diamonds", "J"),
+        Card("Diamonds", "Q"),
+        Card("Diamonds", "K"),
+        Card("Clubs", "A"),
+        Card("Diamonds", "2"),
+    ]
+    assert identify_combination(hand) == CardCombination.STRAIGHT

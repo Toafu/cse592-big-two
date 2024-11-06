@@ -11,7 +11,7 @@ class Player:
         self.name = name
         self.hand: Cards = sorted(hand)
 
-    def find_play(
+    def find_plays(
         self,
         last_play: Cards = None,
         current_combination: CardCombination = CardCombination.ANY,
@@ -52,7 +52,7 @@ class Player:
 
 
 class HumanPlayer(Player):
-    def find_play(self, last_play=None):
+    def find_plays(self, last_play=None):
         print(f"Your hand: {[str(card) for card in self.hand]}")
         print("Last play:", last_play if last_play else "None")
 
