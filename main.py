@@ -6,7 +6,7 @@ class BigTwoGame:
     def __init__(self):
         self.deck = Deck()
         hands = self.deck.deal(4)
-        self.players = [
+        self.players: list[Player] = [
             HumanPlayer("You", hands[0]),
             Player("Computer 1", hands[1]),
             Player("Computer 2", hands[2]),

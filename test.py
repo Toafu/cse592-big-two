@@ -100,6 +100,31 @@ def test_validate_singles():
         assert Play(cards, combo) < Play(last_play, combo)
 
 
+def test_validate_pairs():
+    hand = [
+        Card("Spades", "7"),
+        Card("Hearts", "5"),
+        Card("Hearts", "7"),
+        Card("Diamonds", "3"),
+        Card("Clubs", "Q"),
+        Card("Diamonds", "5"),
+        Card("Hearts", "3"),
+        Card("Diamonds", "J"),
+        Card("Diamonds", "6"),
+        Card("Spades", "J"),
+        Card("Spades", "9"),
+        Card("Diamonds", "Q"),
+        Card("Clubs", "7"),
+    ]
+    p = Player("Pairington", hand)
+    combo = CardCombination.PAIR
+    last_play = [Card("Spades", "5"), Card("Clubs", "5")]
+    available_plays = p.find_plays(last_play, combo)
+    print(available_plays)
+    for p in available_plays:
+        assert(Play(last_play, combo) < Play(p, combo))
+
+
 def test_construct_plays():
     pair = [Card("Hearts", "2"), Card("Clubs", "2")]
     assert is_pair(pair)

@@ -7,6 +7,8 @@ Cards = typing.List[Card]
 
 
 class Player:
+    """The base player acts randomly."""
+
     def __init__(self, name, hand):
         self.name = name
         self.hand: Cards = sorted(hand)
@@ -32,16 +34,22 @@ class Player:
                 ]
             case CardCombination.PAIR:
                 plays: list[Cards] = []
-                best_in_play: Card = max(last_play)
-                i = bisect_right(self.hand, best_in_play)
-                a: list = []
+                best_in_last_play: Card = max(last_play)
+                i = bisect_right(self.hand, best_in_last_play)
+                a: list[Card] = []
                 cur_rank = self.hand[i].rank
                 while i < len(self.hand):
                     if self.hand[i].rank == cur_rank:
                         a.append(self.hand[i])
                         i += 1
                     else:
-                        pass
+                        if len(a) >= 2:
+                            combos = itertools.combinations(a, 2)
+                            for c in combos:
+                                plays.append(list(c))
+                        a.clear()
+                        cur_rank = self.hand[i].rank
+                return plays
 
         for combo_size in [1, 2, 3, 5]:  # Try different combination sizes
             possible_plays = itertools.combinations(self.hand, combo_size)
