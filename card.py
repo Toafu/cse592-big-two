@@ -2,63 +2,7 @@ import random
 import itertools
 from enum import Enum
 from collections import Counter
-
-
-class CardCombination(Enum):
-    ANY = -1
-    SINGLE = 0
-    PAIR = 1
-    TRIPLE = 2
-    FULLHOUSE = 3
-    STRAIGHT = 4
-    FOUROFAKIND = 5
-
-
-# Combination Identification Functions
-def is_single(cards: list):
-    return len(cards) == 1
-
-
-def is_pair(cards):
-    return len(cards) == 2 and cards[0].rank == cards[1].rank
-
-
-def is_triple(cards):
-    return len(cards) == 3 and len(set(card.rank for card in cards)) == 1
-
-
-def is_straight(cards):
-    if len(cards) != 5:
-        return False
-    sorted_cards = sorted(cards, key=lambda c: c.rank_index())
-    for i in range(4):
-        if (
-            sorted_cards[i].rank_index() + 1
-            != sorted_cards[i + 1].rank_index()
-        ):
-            return False
-    return True
-
-
-def is_full_house(cards):
-    rank_counts = Counter(card.rank for card in cards)
-    return sorted(rank_counts.values()) == [2, 3]
-
-
-def is_four_of_a_kind(cards):
-    rank_counts = Counter(card.rank for card in cards)
-    return 4 in rank_counts.values() and len(cards) == 5
-
-
-def is_valid_combination(cards):
-    return (
-        is_single(cards)
-        or is_pair(cards)
-        or is_triple(cards)
-        or is_straight(cards)
-        or is_full_house(cards)
-        or is_four_of_a_kind(cards)
-    )
+import typing
 
 
 class Card:
@@ -103,6 +47,65 @@ class Card:
 
     def suit_index(self):
         return Card.suits[self.suit]
+
+
+class CardCombination(Enum):
+    ANY = -1
+    SINGLE = 0
+    PAIR = 1
+    TRIPLE = 2
+    FULLHOUSE = 3
+    STRAIGHT = 4
+    FOUROFAKIND = 5
+
+
+Cards = typing.List[Card]
+
+
+def is_single(cards: Cards):
+    return len(cards) == 1
+
+
+def is_pair(cards: Cards):
+    return len(cards) == 2 and cards[0].rank == cards[1].rank
+
+
+def is_triple(cards: Cards):
+    return len(cards) == 3 and len(set(card.rank for card in cards)) == 1
+
+
+def is_straight(cards: Cards):
+    if len(cards) != 5:
+        return False
+    sorted_cards = sorted(cards, key=lambda c: c.rank_index())
+    for i in range(4):
+        if (
+            sorted_cards[i].rank_index() + 1
+            != sorted_cards[i + 1].rank_index()
+        ):
+            return False
+    return True
+
+
+def is_full_house(cards: Cards):
+    rank_counts = Counter(card.rank for card in cards)
+    return sorted(rank_counts.values()) == [2, 3]
+
+
+def is_four_of_a_kind(cards: Cards):
+    rank_counts = Counter(card.rank for card in cards)
+    return 4 in rank_counts.values() and len(cards) == 5
+
+
+def is_valid_combination(cards: Cards):
+    return (
+        is_single(cards)
+        or is_pair(cards)
+        or is_triple(cards)
+        or is_straight(cards)
+        or is_full_house(cards)
+        or is_four_of_a_kind(cards)
+    )
 
 
 class Deck:
