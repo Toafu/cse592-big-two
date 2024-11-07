@@ -105,7 +105,7 @@ def test_validate_pairs():
         Card("Spades", "7"),
         Card("Hearts", "5"),
         Card("Hearts", "7"),
-        Card("Diamonds", "3"),
+        Card("Spades", "3"),
         Card("Clubs", "Q"),
         Card("Diamonds", "5"),
         Card("Hearts", "3"),
@@ -120,9 +120,12 @@ def test_validate_pairs():
     combo = CardCombination.PAIR
     last_play = [Card("Spades", "5"), Card("Clubs", "5")]
     available_plays = p.find_plays(last_play, combo)
-    print(available_plays)
+    all_plays = p.find_plays([Card("Clubs", "3"), Card("Diamonds", "3")], combo)
+    unavailable_plays = set(all_plays) - set(available_plays)
     for p in available_plays:
         assert Play(last_play, combo) < Play(p, combo)
+    for p in unavailable_plays:
+        assert Play(p, combo) < Play(last_play, combo)
 
 
 def test_validate_fourofakinds():
