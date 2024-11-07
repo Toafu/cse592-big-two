@@ -1,7 +1,8 @@
 from bisect import bisect_right
 import itertools
 import typing
-from card import Card, CardCombination, is_valid_combination, identify_combination,Play
+from card import Card, CardCombination, is_valid_combination, identify_combination, Play
+
 
 Cards = typing.List[Card]
 Moves = typing.Tuple[Card]
@@ -28,7 +29,7 @@ class Player:
         match current_combination:
             case CardCombination.SINGLE:
                 return [
-                    (self.hand[i],) # Single element tuple
+                    (self.hand[i],)  # Single element tuple
                     for i in range(
                         bisect_right(self.hand, last_play[0]), len(self.hand)
                     )
@@ -37,13 +38,19 @@ class Player:
                 return self._find_same_rank_combos_(last_play, 2)
             case CardCombination.TRIPLE:
                 return self._find_same_rank_combos_(last_play, 3)
+            case CardCombination.FOUROFAKIND:
+                freq = Counter([c.rank for c in self.hand])
+                quad_ranks = [k for k, v in freq.items() if v == 4]
+                return []
 
         for combo_size in [1, 2, 3, 5]:  # Try different combination sizes
             possible_plays = itertools.combinations(self.hand, combo_size)
         return possible_plays
 
     def _find_same_rank_combos_(self, last_play, n: int) -> list[Moves]:
-        assert n == 2 or n == 3, "This function only supports pairs and triples."
+        assert (
+            n == 2 or n == 3
+        ), "This function only supports pairs and triples."
         plays: list[Cards] = []
         best_in_last_play: Card = max(last_play)
         i = bisect_right(self.hand, best_in_last_play)
