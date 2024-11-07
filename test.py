@@ -75,6 +75,19 @@ def test_compare_fourofakinds():
         fourofakind_high, FOUROFAKIND
     )
 
+    pair = [
+        Card("Diamonds", "8"),
+        Card("Spades", "8"),
+    ]
+
+    assert Play(pair, CardCombination.PAIR) < Play(
+        fourofakind_high, FOUROFAKIND
+    )
+
+    assert not Play(fourofakind_high, FOUROFAKIND) < Play(
+        pair, CardCombination.PAIR
+    )
+
 
 def test_validate_singles():
     hand = [
@@ -120,7 +133,9 @@ def test_validate_pairs():
     combo = CardCombination.PAIR
     last_play = [Card("Spades", "5"), Card("Clubs", "5")]
     available_plays = p.find_plays(last_play, combo)
-    all_plays = p.find_plays([Card("Clubs", "3"), Card("Diamonds", "3")], combo)
+    all_plays = p.find_plays(
+        [Card("Clubs", "3"), Card("Diamonds", "3")], combo
+    )
     unavailable_plays = set(all_plays) - set(available_plays)
     for p in available_plays:
         assert Play(last_play, combo) < Play(p, combo)
@@ -139,6 +154,40 @@ def test_validate_fourofakinds():
     ]
 
     assert not is_four_of_a_kind(hand)
+
+    hand = [
+        Card("Spades", "7"),
+        Card("Hearts", "5"),
+        Card("Hearts", "7"),
+        Card("Hearts", "3"),
+        Card("Diamonds", "7"),
+        Card("Diamonds", "6"),
+        Card("Spades", "J"),
+        Card("Spades", "9"),
+        Card("Diamonds", "Q"),
+        Card("Clubs", "7"),
+    ]
+    fourofakind = [
+        Card("Spades", "7"),
+        Card("Hearts", "7"),
+        Card("Diamonds", "7"),
+        Card("Clubs", "7"),
+    ]
+    everything_else = [
+        Card("Hearts", "5"),
+        Card("Hearts", "3"),
+        Card("Diamonds", "6"),
+        Card("Spades", "J"),
+        Card("Spades", "9"),
+        Card("Diamonds", "Q"),
+    ]
+    p = Player("Quaddington", hand)
+    combo = CardCombination.FOUROFAKIND
+    last_play = [Card("Spades", "5"), Card("Clubs", "5")]
+    available_plays = set(p.find_plays(last_play, combo))
+    validation_set = set(tuple(fourofakind + [e]) for e in everything_else)
+
+    assert available_plays == validation_set
 
 
 def test_construct_plays():

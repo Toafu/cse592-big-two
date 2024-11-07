@@ -165,6 +165,17 @@ class Play:
                 assert False, "Combination cannot be declared as ANY"
 
     def __lt__(self, other: "Play"):
+        """Determine if self's Play < other's Play."""
+        if (
+            self.combination != CardCombination.FOUROFAKIND
+            and other.combination == CardCombination.FOUROFAKIND
+        ):
+            return True
+        elif (
+            self.combination == CardCombination.FOUROFAKIND
+            and other.combination != CardCombination.FOUROFAKIND
+        ):
+            return False
         return self.cards[-1] < other.cards[-1]
 
 
