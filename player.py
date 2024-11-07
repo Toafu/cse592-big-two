@@ -1,7 +1,8 @@
 from bisect import bisect_right
 import itertools
 import typing
-from card import Card, CardCombination, is_valid_combination, Counter
+from card import Card, CardCombination, is_valid_combination, identify_combination, Play
+
 
 Cards = typing.List[Card]
 Moves = typing.Tuple[Card]
@@ -73,24 +74,52 @@ class Player:
 
 
 class HumanPlayer(Player):
-    def find_plays(self, last_play=None):
+    def find_plays(self, last_play = None, current_combination = CardCombination.ANY):
         print(f"Your hand: {[str(card) for card in self.hand]}")
         print("Last play:", last_play if last_play else "None")
+        #to print last play
+        lastplay = Play(last_play, current_combination)
+        # if last_play:
+        #     card_strings = [str(card) for card in last_play.cards]
+        #     print("Last Play:", ", ".join(card_strings))
+        #     lastplay = Play(last_play, current_combination)
+        # else:
+        #     print("Last Play: None")
 
         while True:
             play_input = input(
-                "Enter indices of cards to play (e.g., '0 2 4' for a combination): "
+                "Enter indices of cards to play (e.g., '0 2 4' for a combination) or enter -1 to pass turn: "
             )
             try:
                 indices = list(map(int, play_input.split()))
                 selected_cards = [self.hand[i] for i in indices]
 
+                #check for whether the player passed
+                if(len(indices) == 1 and indices[0] == -1):
+                    return None
+
+                # checking for whether the card that is played is of the current combination and whether is it valid combination and whether it is gre
                 if is_valid_combination(selected_cards) and (
-                    not last_play or selected_cards > last_play
+                    identify_combination(selected_cards) == current_combination
                 ):
-                    for card in selected_cards:
-                        self.hand.remove(card)
-                    return selected_cards
+                    print("validity checked")
+                    #check whether the selected cards are greater than the last play
+                    #create a play here
+                    selected_play = Play(selected_cards, current_combination)
+                    #if last play is not None
+                    if lastplay:
+                        print("last play exhists")
+                        print(last_play.cards)
+                        print(selected_play.cards)
+                        if( last_play < selected_play):
+                            for card in selected_cards:
+                                self.hand.remove(card)
+                            return selected_cards
+                    #if lastplay is none
+                    else:
+                        for card in selected_cards:
+                                self.hand.remove(card)
+                        return selected_cards
                 else:
                     print(
                         "Invalid combination or play not higher than last play."

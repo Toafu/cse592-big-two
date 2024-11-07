@@ -70,6 +70,10 @@ class CardCombination(Enum):
 
 Cards = typing.List[Card]
 
+#to represent the type of combination
+def __repr__(self):
+    return self.name
+
 
 def is_single(cards: Cards) -> bool:
     return len(cards) == 1
