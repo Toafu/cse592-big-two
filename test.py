@@ -122,7 +122,20 @@ def test_validate_pairs():
     available_plays = p.find_plays(last_play, combo)
     print(available_plays)
     for p in available_plays:
-        assert(Play(last_play, combo) < Play(p, combo))
+        assert Play(last_play, combo) < Play(p, combo)
+
+
+def test_validate_fourofakinds():
+    hand = [
+        Card("Spades", "3"),
+        Card("Hearts", "3"),
+        Card("Diamonds", "3"),
+        Card("Clubs", "3"),
+        Card("Spades", "5"),
+        Card("Spades", "A"),
+    ]
+
+    assert not is_four_of_a_kind(hand)
 
 
 def test_construct_plays():

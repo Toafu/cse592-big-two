@@ -6,6 +6,12 @@ import typing
 
 
 class Card:
+    """
+    Represent a card with a suit and rank.
+
+    Can be compared to other Cards.
+    """
+
     suits = {"Diamonds": 0, "Clubs": 1, "Hearts": 2, "Spades": 3}
     ranks = {
         "3": 0,
@@ -50,6 +56,8 @@ class Card:
 
 
 class CardCombination(Enum):
+    """Represent a combination."""
+
     INVALID = -999
     ANY = -1
     SINGLE = 0
@@ -130,21 +138,26 @@ def identify_combination(cards: Cards) -> CardCombination:
 
 
 class Play:
-    """Represent a played combination. Easy to compare."""
+    """
+    Represent a played combination.
+
+    Standardizes the order of Cards.
+    Can be compared with other Plays.
+    """
 
     def __init__(self, cards: Cards, combination: CardCombination):
-        """Initialize a Play object, standardizing the order of cards."""
+        """
+        Initialize a Play object, standardizing the order of cards.
+        Put Cards that need to be compared at the back of the Play.
+        Pairs and Straights: only compare just the best card.
+        Full Houses and Four of a Kinds: compare ranks of triple or quad.
+        """
         self.cards: Cards = cards
         self.combination: CardCombination = combination
 
         match self.combination:
-            # Prioritize the tiebreaker case at the end
-            # Singles and Triples don't require reordering
             case CardCombination.PAIR | CardCombination.STRAIGHT:
                 self.cards = sorted(self.cards)
-            # Put the more frequent ranks at the back
-            # Full House [Double, Triple]
-            # Four of a Kind [Single, Quadruple]
             case CardCombination.FULLHOUSE | CardCombination.FOUROFAKIND:
                 freq = Counter([c.rank for c in self.cards])
                 self.cards = sorted(self.cards, key=lambda x: freq[x.rank])
@@ -156,6 +169,12 @@ class Play:
 
 
 class Deck:
+    """
+    Represent a deck of Cards.
+
+    Initializes already shuffled.
+    """
+
     def __init__(self):
         self.cards = [
             Card(suit, rank)
