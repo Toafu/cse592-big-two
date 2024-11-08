@@ -168,7 +168,7 @@ def test_validate_fourofakinds():
         Card("Diamonds", "Q"),
         Card("Clubs", "7"),
         Card("Diamonds", "5"),
-        Card("Spades", "5")
+        Card("Spades", "5"),
     ]
     fourofakind_seven = [
         Card("Diamonds", "7"),
@@ -208,10 +208,45 @@ def test_validate_fourofakinds():
     combo = CardCombination.FOUROFAKIND
     last_play = Play([Card("Spades", "5"), Card("Clubs", "5")], combo)
     available_plays = set(p.find_plays(last_play))
-    validation_set_sevens = set(tuple(fourofakind_seven + [e]) for e in everything_else_seven)
-    validation_set_fives = set(tuple(fourofakind_five + [e]) for e in everything_else_five)
+    validation_set_sevens = set(
+        tuple(fourofakind_seven + [e]) for e in everything_else_seven
+    )
+    validation_set_fives = set(
+        tuple(fourofakind_five + [e]) for e in everything_else_five
+    )
     validation_set = validation_set_fives | validation_set_sevens
     assert available_plays == validation_set
+
+
+def test_validate_full_houses():
+    hand = [
+        Card("Spades", "7"),
+        Card("Hearts", "5"),
+        Card("Hearts", "7"),
+        Card("Clubs", "5"),
+        Card("Hearts", "3"),
+        Card("Diamonds", "7"),
+        Card("Diamonds", "6"),
+        Card("Spades", "J"),
+        Card("Spades", "9"),
+        Card("Diamonds", "Q"),
+        Card("Clubs", "7"),
+        Card("Diamonds", "5"),
+    ]
+    p = Player("Full Housington", hand)
+    combo = CardCombination.FULLHOUSE
+    last_play = Play(
+        [
+            Card("Spades", "5"),
+            Card("Clubs", "5"),
+            Card("Hearts", "5"),
+            Card("Spades", "2"),
+            Card("Diamonds", "2"),
+        ],
+        combo,
+    )
+    available_plays = set(p.find_plays(last_play))
+    assert False
 
 
 def test_construct_plays():

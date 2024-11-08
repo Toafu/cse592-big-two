@@ -182,7 +182,7 @@ class Play:
             and other.combination != CardCombination.ANY
         ):
             return True
-        if (
+        elif (
             self.combination != CardCombination.ANY
             and other.combination == CardCombination.ANY
         ):

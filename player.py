@@ -26,6 +26,8 @@ class Player:
         """
 
         match last_play.combination:
+            # TODO: Integrate FOUROFAKIND into all of these
+            # TODO: Integrate ANY
             case CardCombination.SINGLE:
                 return [
                     (self.hand[i],)  # Single element tuple
@@ -39,20 +41,21 @@ class Player:
             case CardCombination.TRIPLE:
                 return self._find_same_rank_combos_(last_play, 3)
             case CardCombination.FOUROFAKIND:
-                moves: list[Moves] = []
-                freq = Counter([c.rank for c in self.hand])
-                quad_ranks = [k for k, v in freq.items() if v == 4]
-                for q_rank in quad_ranks:
-                    q_idx = bisect_left(self.hand, Card("Diamonds", q_rank))
-                    quad = self.hand[q_idx:q_idx+4]
-                    i: int = 0
-                    while (i < len(self.hand)):
-                        if (i == q_idx):
-                            i += 4
-                            continue
-                        moves.append(tuple(quad + [self.hand[i]]))
-                        i += 1
-                return moves
+                return self._find_four_of_a_kinds_(last_play)
+            case CardCombination.FULLHOUSE:
+                # Only the triple matters, so any pair should be allowed
+                # To get all pairs, set fake last play as a pair of worst card
+                pairs = self._find_same_rank_combos_(
+                    Play(
+                        [Card("Diamonds", "3"), Card("Diamonds", "3")],
+                        CardCombination.PAIR,
+                    ),
+                    2,
+                )
+                triples = self._find_same_rank_combos_(
+                    Play(last_play.cards[2:], CardCombination.TRIPLE), 3
+                )
+                return []
 
         # for combo_size in [1, 2, 3, 5]:  # Try different combination sizes
         #     possible_plays = itertools.combinations(self.hand, combo_size)
@@ -80,6 +83,22 @@ class Player:
                 same_rank.clear()
                 cur_rank = self.hand[i].rank
         return plays
+
+    def _find_four_of_a_kinds_(self, last_play: Play) -> list[Moves]:
+        moves: list[Moves] = []
+        freq = Counter([c.rank for c in self.hand])
+        quad_ranks = [k for k, v in freq.items() if v == 4]
+        for q_rank in quad_ranks:
+            q_idx = bisect_left(self.hand, Card("Diamonds", q_rank))
+            quad = self.hand[q_idx : q_idx + 4]
+            i: int = 0
+            while i < len(self.hand):
+                if i == q_idx:
+                    i += 4
+                    continue
+                moves.append(tuple(quad + [self.hand[i]]))
+                i += 1
+        return moves
 
     def has_cards(self):
         return len(self.hand) > 0
