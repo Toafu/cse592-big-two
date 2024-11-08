@@ -44,10 +44,9 @@ class Player:
                 return self._find_four_of_a_kinds_(last_play)
             case CardCombination.FULLHOUSE:
                 # Only the triple matters, so any pair should be allowed
-                # To get all pairs, set fake last play as a pair of worst card
                 pairs = self._find_same_rank_combos_(
                     Play(
-                        [Card("Diamonds", "3"), Card("Diamonds", "3")],
+                        [],
                         CardCombination.PAIR,
                     ),
                     2,
@@ -67,12 +66,15 @@ class Player:
             n == 2 or n == 3
         ), "This function only supports pairs and triples."
         plays: list[Moves] = []
-        best_in_last_play: Card = max(last_play.cards)
-        i = bisect_right(self.hand, best_in_last_play)
+        i = (
+            bisect_right(self.hand, max(last_play.cards))
+            if len(last_play.cards)
+            else 0
+        )
         same_rank: list[Card] = []
         cur_rank = self.hand[i].rank
-        while i < len(self.hand):
-            if self.hand[i].rank == cur_rank:
+        while i <= len(self.hand):
+            if i != len(self.hand) and self.hand[i].rank == cur_rank:
                 same_rank.append(self.hand[i])
                 i += 1
             else:
@@ -80,6 +82,8 @@ class Player:
                     combos = itertools.combinations(same_rank, n)
                     for c in combos:
                         plays.append(c)
+                if (i == len(self.hand)):
+                    break
                 same_rank.clear()
                 cur_rank = self.hand[i].rank
         return plays

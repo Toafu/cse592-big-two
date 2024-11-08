@@ -221,16 +221,17 @@ def test_validate_fourofakinds():
 def test_validate_full_houses():
     hand = [
         Card("Spades", "7"),
-        Card("Hearts", "5"),
         Card("Hearts", "7"),
-        Card("Clubs", "5"),
         Card("Hearts", "3"),
+        Card("Hearts", "9"),
+        Card("Spades", "Q"),
         Card("Diamonds", "7"),
-        Card("Diamonds", "6"),
         Card("Spades", "J"),
-        Card("Spades", "9"),
+        Card("Clubs", "9"),
         Card("Diamonds", "Q"),
-        Card("Clubs", "7"),
+        Card("Diamonds", "3"),
+        Card("Clubs", "3"),
+        Card("Spades", "9"),
         Card("Diamonds", "5"),
     ]
     p = Player("Full Housington", hand)
@@ -246,6 +247,27 @@ def test_validate_full_houses():
         combo,
     )
     available_plays = set(p.find_plays(last_play))
+    all_pairs = p._find_same_rank_combos_(
+        Play(
+            [],
+            CardCombination.PAIR,
+        ),
+        2,
+    )
+    triples = [
+        (Card("Diamonds", "7"), Card("Hearts", "7"), Card("Spades", "7")),
+        (Card("Clubs", "9"), Card("Hearts", "9"), Card("Spades", "9")),
+    ]
+    pairs_with_sevens = [
+        (Card("Diamonds", "3"), Card("Clubs", "3")),
+        (Card("Diamonds", "3"), Card("Hearts", "3")),
+        (Card("Clubs", "3"), Card("Diamonds", "3")),
+        (Card("Clubs", "9"), Card("Hearts", "9")),
+        (Card("Clubs", "9"), Card("Spades", "9")),
+        (Card("Hearts", "9"), Card("Spades", "9")),
+        (Card("Diamonds", "Q"), Card("Spades", "Q"))
+    ]
+    assert len(all_pairs) == 10
     assert False
 
 
