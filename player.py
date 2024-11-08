@@ -1,7 +1,7 @@
 from bisect import bisect_right
 import itertools
 import typing
-from card import Card, CardCombination, is_valid_combination, identify_combination, Play
+from card import *
 
 
 Cards = typing.List[Card]
@@ -74,8 +74,8 @@ class Player:
 
 
 class HumanPlayer(Player):
-    def find_plays(self, last_play = None, current_combination = CardCombination.ANY):
-        print(f"Your hand: {[str(card) for card in self.hand]}")
+    def find_plays(self, last_play, current_combination = CardCombination.ANY):
+        print(f"Your hand: {[f'{i}: {str(card)}' for i, card in enumerate(self.hand)]}")
         print("Last play:", last_play if last_play else "None")
         #to print last play
         lastplay = Play(last_play, current_combination)
@@ -107,16 +107,15 @@ class HumanPlayer(Player):
                     #create a play here
                     selected_play = Play(selected_cards, current_combination)
                     #if last play is not None
-                    if lastplay:
-                        print("last play exhists")
-                        print(last_play.cards)
-                        print(selected_play.cards)
-                        if( last_play < selected_play):
+                    if lastplay.cards:
+                        print("last play cards exhists")
+                        if( lastplay < selected_play):
                             for card in selected_cards:
                                 self.hand.remove(card)
                             return selected_cards
                     #if lastplay is none
                     else:
+                        print("Last play of cards is None")
                         for card in selected_cards:
                                 self.hand.remove(card)
                         return selected_cards

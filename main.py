@@ -5,7 +5,7 @@ from card import Card, CardCombination, Deck, Play
 class BigTwoGame:
     def __init__(self):
         self.deck = Deck()
-        hands = self.deck.deal(4)
+        # hands = self.deck.deal(4)
         # self.players: list[Player] = [
         #     HumanPlayer("You", hands[0]),
         #     Player("Computer 1", hands[1]),
@@ -17,10 +17,14 @@ class BigTwoGame:
             HumanPlayer("Player1", hands[0]),
             HumanPlayer("Player2", hands[1]),
         ]
+        #variable to track passes
+        self.passes = [False] * len(self.players)
+
         # the current player index would be for the player holding the 3 of diamonds
         # check for 3 of diamonds
         for i in range(len(self.players)):
             lowestCard = self.players[i].hand[0]
+            
             if(lowestCard.suit == 'Diamonds' and lowestCard.rank == '3'):
                 self.current_player_index = i
         self.last_play = None
@@ -32,17 +36,36 @@ class BigTwoGame:
         )
 
     def play_round(self):
+        #to check if all other players have passed their turn
+        if self.check_other_passes():
+            print("All other players have passed ")
+            print("Now the player can decide which combination to play")
+            self.current_combination = CardCombination.ANY
         player = self.players[self.current_player_index]
         print(f"\n{player.name}'s turn")
         print("Current Combination:",self.current_combination.name)
         play = player.find_plays(self.last_play, self.current_combination)
+
+        
+
         if play:
             print(f"{player.name} plays: {play}")
             self.last_play = play
         else:
             print(f"{player.name} passes")
+            self.passes[self.current_player_index] = True
+        
 
         self.next_player()
+    
+    #function to check if all the other players have passed their turn
+    def check_other_passes(self):
+        for i, has_passed in enumerate(self.passes):
+            # Skip the current player and check if any other player has not passed
+            if i != self.current_player_index and not has_passed:
+                return False
+        return True
+
 
     def is_game_over(self):
         return any(not player.has_cards() for player in self.players)
