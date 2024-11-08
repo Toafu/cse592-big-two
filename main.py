@@ -49,7 +49,9 @@ class BigTwoGame:
         if play:
             print(f"{player.name} plays: {play}")
             # TODO: FIX THIS BANDAID
-            self.last_play = Play(list(play[0]), identify_combination(list(play[0])))
+            self.last_play = Play(
+                list(play[0]), identify_combination(list(play[0]))
+            )
         else:
             print(f"{player.name} passes")
             self.passes[self.current_player_index] = True

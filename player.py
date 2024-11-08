@@ -1,4 +1,4 @@
-from bisect import bisect_right
+from bisect import bisect, bisect_left, bisect_right
 import itertools
 import typing
 from card import *
@@ -30,7 +30,8 @@ class Player:
                 return [
                     (self.hand[i],)  # Single element tuple
                     for i in range(
-                        bisect_right(self.hand, last_play.cards[0]), len(self.hand)
+                        bisect_right(self.hand, last_play.cards[0]),
+                        len(self.hand),
                     )
                 ]
             case CardCombination.PAIR:
@@ -38,9 +39,20 @@ class Player:
             case CardCombination.TRIPLE:
                 return self._find_same_rank_combos_(last_play, 3)
             case CardCombination.FOUROFAKIND:
+                moves: list[Moves] = []
                 freq = Counter([c.rank for c in self.hand])
                 quad_ranks = [k for k, v in freq.items() if v == 4]
-                return []
+                for q_rank in quad_ranks:
+                    q_idx = bisect_left(self.hand, Card("Diamonds", q_rank))
+                    quad = self.hand[q_idx:q_idx+4]
+                    i: int = 0
+                    while (i < len(self.hand)):
+                        if (i == q_idx):
+                            i += 4
+                            continue
+                        moves.append(tuple(quad + [self.hand[i]]))
+                        i += 1
+                return moves
 
         # for combo_size in [1, 2, 3, 5]:  # Try different combination sizes
         #     possible_plays = itertools.combinations(self.hand, combo_size)
@@ -74,7 +86,9 @@ class Player:
 
 
 class HumanPlayer(Player):
-    def find_plays(self, last_play: Play, current_combination=CardCombination.ANY):
+    def find_plays(
+        self, last_play: Play, current_combination=CardCombination.ANY
+    ):
         print(
             f"Your hand: {[f'{i}: {str(card)}' for i, card in enumerate(self.hand)]}"
         )

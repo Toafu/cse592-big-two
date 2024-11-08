@@ -4,6 +4,6 @@ format:
 .PHONY: format
 
 test:
-	pytest -v test.py
+	pytest -vv test.py
 
 .PHONY: test

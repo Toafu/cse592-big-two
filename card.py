@@ -48,6 +48,12 @@ class Card:
             other.suit_index(),
         )
 
+    def __eq__(self, other):
+        return self.rank == other.rank and self.suit == other.suit
+
+    def __hash__(self):
+        return hash((self.rank, self.suit))
+
     def rank_index(self):
         return Card.ranks[self.rank]
 
