@@ -102,20 +102,17 @@ class HumanPlayer(Player):
                 if is_valid_combination(selected_cards) and (
                     identify_combination(selected_cards) == current_combination
                 ):
-                    print("validity checked")
                     #check whether the selected cards are greater than the last play
                     #create a play here
                     selected_play = Play(selected_cards, current_combination)
                     #if last play is not None
                     if lastplay.cards:
-                        print("last play cards exhists")
                         if( lastplay < selected_play):
                             for card in selected_cards:
                                 self.hand.remove(card)
                             return selected_cards
                     #if lastplay is none
                     else:
-                        print("Last play of cards is None")
                         for card in selected_cards:
                                 self.hand.remove(card)
                         return selected_cards
