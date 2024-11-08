@@ -1,5 +1,5 @@
 from player import HumanPlayer, Player
-from card import Card, CardCombination, Deck, Play
+from card import Card, CardCombination, Deck, Play, identify_combination
 
 
 class BigTwoGame:
@@ -27,7 +27,7 @@ class BigTwoGame:
 
             if lowestCard.suit == "Diamonds" and lowestCard.rank == "3":
                 self.current_player_index = i
-        self.last_play = []
+        self.last_play: Play = Play([], CardCombination.ANY)
         self.current_combination = CardCombination.SINGLE
 
     def next_player(self):
@@ -44,12 +44,12 @@ class BigTwoGame:
         player = self.players[self.current_player_index]
         print(f"\n{player.name}'s turn")
         print("Current Combination:", self.current_combination.name)
-        play = player.find_plays(self.last_play, self.current_combination)
+        play = player.find_plays(self.last_play)
 
         if play:
             print(f"{player.name} plays: {play}")
             # TODO: FIX THIS BANDAID
-            self.last_play = list(play[0])
+            self.last_play = Play(list(play[0]), identify_combination(list(play[0])))
         else:
             print(f"{player.name} passes")
             self.passes[self.current_player_index] = True

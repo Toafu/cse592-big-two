@@ -17,8 +17,7 @@ class Player:
 
     def find_plays(
         self,
-        last_play: Cards,
-        current_combination: CardCombination = CardCombination.ANY,
+        last_play: Play,
     ) -> list[Moves]:
         """
         Return all valid plays compatible with the current combination.
@@ -26,12 +25,12 @@ class Player:
         Filter out all plays worse than last_play.
         """
 
-        match current_combination:
+        match last_play.combination:
             case CardCombination.SINGLE:
                 return [
                     (self.hand[i],)  # Single element tuple
                     for i in range(
-                        bisect_right(self.hand, last_play[0]), len(self.hand)
+                        bisect_right(self.hand, last_play.cards[0]), len(self.hand)
                     )
                 ]
             case CardCombination.PAIR:
@@ -48,12 +47,12 @@ class Player:
         # return possible_plays
         return []
 
-    def _find_same_rank_combos_(self, last_play, n: int) -> list[Moves]:
+    def _find_same_rank_combos_(self, last_play: Play, n: int) -> list[Moves]:
         assert (
             n == 2 or n == 3
         ), "This function only supports pairs and triples."
         plays: list[Moves] = []
-        best_in_last_play: Card = max(last_play)
+        best_in_last_play: Card = max(last_play.cards)
         i = bisect_right(self.hand, best_in_last_play)
         same_rank: list[Card] = []
         cur_rank = self.hand[i].rank
@@ -75,13 +74,12 @@ class Player:
 
 
 class HumanPlayer(Player):
-    def find_plays(self, last_play, current_combination=CardCombination.ANY):
+    def find_plays(self, last_play: Play, current_combination=CardCombination.ANY):
         print(
             f"Your hand: {[f'{i}: {str(card)}' for i, card in enumerate(self.hand)]}"
         )
         print("Last play:", last_play if last_play else "None")
         # to print last play
-        lastplay = Play(last_play, current_combination)
         # if last_play:
         #     card_strings = [str(card) for card in last_play.cards]
         #     print("Last Play:", ", ".join(card_strings))
@@ -109,8 +107,8 @@ class HumanPlayer(Player):
                     # create a play here
                     selected_play = Play(selected_cards, current_combination)
                     # if last play is not None
-                    if lastplay.cards:
-                        if lastplay < selected_play:
+                    if last_play.cards:
+                        if last_play < selected_play:
                             for card in selected_cards:
                                 self.hand.remove(card)
                             return [tuple(selected_cards)]
