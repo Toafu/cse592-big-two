@@ -17,7 +17,7 @@ class Player:
 
     def find_plays(
         self,
-        last_play: Cards = [],
+        last_play: Cards,
         current_combination: CardCombination = CardCombination.ANY,
     ) -> list[Moves]:
         """
@@ -43,9 +43,10 @@ class Player:
                 quad_ranks = [k for k, v in freq.items() if v == 4]
                 return []
 
-        for combo_size in [1, 2, 3, 5]:  # Try different combination sizes
-            possible_plays = itertools.combinations(self.hand, combo_size)
-        return possible_plays
+        # for combo_size in [1, 2, 3, 5]:  # Try different combination sizes
+        #     possible_plays = itertools.combinations(self.hand, combo_size)
+        # return possible_plays
+        return []
 
     def _find_same_rank_combos_(self, last_play, n: int) -> list[Moves]:
         assert (
@@ -74,10 +75,12 @@ class Player:
 
 
 class HumanPlayer(Player):
-    def find_plays(self, last_play, current_combination = CardCombination.ANY):
-        print(f"Your hand: {[f'{i}: {str(card)}' for i, card in enumerate(self.hand)]}")
+    def find_plays(self, last_play, current_combination=CardCombination.ANY):
+        print(
+            f"Your hand: {[f'{i}: {str(card)}' for i, card in enumerate(self.hand)]}"
+        )
         print("Last play:", last_play if last_play else "None")
-        #to print last play
+        # to print last play
         lastplay = Play(last_play, current_combination)
         # if last_play:
         #     card_strings = [str(card) for card in last_play.cards]
@@ -94,28 +97,28 @@ class HumanPlayer(Player):
                 indices = list(map(int, play_input.split()))
                 selected_cards = [self.hand[i] for i in indices]
 
-                #check for whether the player passed
-                if(len(indices) == 1 and indices[0] == -1):
-                    return None
+                # check for whether the player passed
+                if len(indices) == 1 and indices[0] == -1:
+                    return []
 
                 # checking for whether the card that is played is of the current combination and whether is it valid combination and whether it is gre
                 if is_valid_combination(selected_cards) and (
                     identify_combination(selected_cards) == current_combination
                 ):
-                    #check whether the selected cards are greater than the last play
-                    #create a play here
+                    # check whether the selected cards are greater than the last play
+                    # create a play here
                     selected_play = Play(selected_cards, current_combination)
-                    #if last play is not None
+                    # if last play is not None
                     if lastplay.cards:
-                        if( lastplay < selected_play):
+                        if lastplay < selected_play:
                             for card in selected_cards:
                                 self.hand.remove(card)
-                            return selected_cards
-                    #if lastplay is none
+                            return [tuple(selected_cards)]
+                    # if lastplay is none
                     else:
                         for card in selected_cards:
-                                self.hand.remove(card)
-                        return selected_cards
+                            self.hand.remove(card)
+                        return [tuple(selected_cards)]
                 else:
                     print(
                         "Invalid combination or play not higher than last play."

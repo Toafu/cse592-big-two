@@ -70,7 +70,8 @@ class CardCombination(Enum):
 
 Cards = typing.List[Card]
 
-#to represent the type of combination
+
+# to represent the type of combination
 def __repr__(self):
     return self.name
 
@@ -170,6 +171,16 @@ class Play:
 
     def __lt__(self, other: "Play"):
         """Determine if self's Play < other's Play."""
+        if (
+            self.combination == CardCombination.ANY
+            and other.combination != CardCombination.ANY
+        ):
+            return True
+        if (
+            self.combination != CardCombination.ANY
+            and other.combination == CardCombination.ANY
+        ):
+            return False
         if (
             self.combination != CardCombination.FOUROFAKIND
             and other.combination == CardCombination.FOUROFAKIND
