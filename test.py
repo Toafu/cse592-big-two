@@ -265,10 +265,21 @@ def test_validate_full_houses():
         (Card("Clubs", "9"), Card("Hearts", "9")),
         (Card("Clubs", "9"), Card("Spades", "9")),
         (Card("Hearts", "9"), Card("Spades", "9")),
-        (Card("Diamonds", "Q"), Card("Spades", "Q"))
+        (Card("Diamonds", "Q"), Card("Spades", "Q")),
     ]
+    full_houses_with_seven = []
+    for p in pairs_with_sevens:
+        full_houses_with_seven.append(p + triples[0])
+    assert len(full_houses_with_seven) == 7
+    for f in full_houses_with_seven:
+        assert (
+            is_full_house(list(f))
+            and Play(list(f), CardCombination.FULLHOUSE) > last_play
+        )
     assert len(all_pairs) == 10
-    assert False
+    for p in available_plays:
+        print(p)
+    assert len(available_plays) == 14
 
 
 def test_construct_plays():

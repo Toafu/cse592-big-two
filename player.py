@@ -54,7 +54,14 @@ class Player:
                 triples = self._find_same_rank_combos_(
                     Play(last_play.cards[2:], CardCombination.TRIPLE), 3
                 )
-                return []
+                return [
+                    *(
+                        (p + t)
+                        for p in pairs
+                        for t in triples
+                        if p[0].rank != t[0].rank
+                    )
+                ]
 
         # for combo_size in [1, 2, 3, 5]:  # Try different combination sizes
         #     possible_plays = itertools.combinations(self.hand, combo_size)
@@ -82,7 +89,7 @@ class Player:
                     combos = itertools.combinations(same_rank, n)
                     for c in combos:
                         plays.append(c)
-                if (i == len(self.hand)):
+                if i == len(self.hand):
                     break
                 same_rank.clear()
                 cur_rank = self.hand[i].rank
