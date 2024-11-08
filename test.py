@@ -106,8 +106,8 @@ def test_validate_singles():
     split = bisect_right(p.hand, last_play[0])
     unavailable_plays = [[i] for i in p.hand[0:split]]
 
-    for cards in available_plays:
-        assert Play(last_play, combo) < Play(cards, combo)
+    for moves in available_plays:
+        assert Play(last_play, combo) < Play(list(moves), combo)
 
     for cards in unavailable_plays:
         assert Play(cards, combo) < Play(last_play, combo)
@@ -137,10 +137,10 @@ def test_validate_pairs():
         [Card("Clubs", "3"), Card("Diamonds", "3")], combo
     )
     unavailable_plays = set(all_plays) - set(available_plays)
-    for p in available_plays:
-        assert Play(last_play, combo) < Play(p, combo)
-    for p in unavailable_plays:
-        assert Play(p, combo) < Play(last_play, combo)
+    for move in available_plays:
+        assert Play(last_play, combo) < Play(list(move), combo)
+    for move in unavailable_plays:
+        assert Play(list(move), combo) < Play(last_play, combo)
 
 
 def test_validate_fourofakinds():

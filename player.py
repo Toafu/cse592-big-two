@@ -5,7 +5,7 @@ from card import *
 
 
 Cards = typing.List[Card]
-Moves = typing.Tuple[Card]
+Moves = typing.Tuple[Card, ...]
 
 
 class Player:
@@ -17,7 +17,7 @@ class Player:
 
     def find_plays(
         self,
-        last_play: Cards = None,
+        last_play: Cards = [],
         current_combination: CardCombination = CardCombination.ANY,
     ) -> list[Moves]:
         """
@@ -51,7 +51,7 @@ class Player:
         assert (
             n == 2 or n == 3
         ), "This function only supports pairs and triples."
-        plays: list[Cards] = []
+        plays: list[Moves] = []
         best_in_last_play: Card = max(last_play)
         i = bisect_right(self.hand, best_in_last_play)
         same_rank: list[Card] = []

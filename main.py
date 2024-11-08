@@ -24,7 +24,7 @@ class BigTwoGame:
         # check for 3 of diamonds
         for i in range(len(self.players)):
             lowestCard = self.players[i].hand[0]
-            
+
             if(lowestCard.suit == 'Diamonds' and lowestCard.rank == '3'):
                 self.current_player_index = i
         self.last_play = None
@@ -46,18 +46,16 @@ class BigTwoGame:
         print("Current Combination:",self.current_combination.name)
         play = player.find_plays(self.last_play, self.current_combination)
 
-        
-
         if play:
             print(f"{player.name} plays: {play}")
             self.last_play = play
         else:
             print(f"{player.name} passes")
             self.passes[self.current_player_index] = True
-        
+
 
         self.next_player()
-    
+
     #function to check if all the other players have passed their turn
     def check_other_passes(self):
         for i, has_passed in enumerate(self.passes):
