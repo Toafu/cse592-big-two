@@ -12,7 +12,7 @@ class Player:
     """The base player acts randomly."""
 
     def __init__(self, name, hand):
-        self.name = name
+        self.name: str = name
         self.hand: Cards = sorted(hand)
 
     def find_plays(
@@ -62,17 +62,26 @@ class Player:
                         if p[0].rank != t[0].rank
                     )
                 ]
-
-        # for combo_size in [1, 2, 3, 5]:  # Try different combination sizes
-        #     possible_plays = itertools.combinations(self.hand, combo_size)
-        # return possible_plays
+            case CardCombination.STRAIGHT:
+                # Cursed dynamic sliding window
+                moves: list[Moves] = []
+                best_card_in_play = max(last_play.cards)
+                least_viable_rank = list(Card.ranks)[
+                    best_card_in_play.rank_index() - 4
+                ]
+                i = bisect_left(
+                    self.hand, Card("Diamonds", str(least_viable_rank))
+                )
+                while i < len(self.hand):
+                    i += 1
+                return moves
         return []
 
     def _find_same_rank_combos_(self, last_play: Play, n: int) -> list[Moves]:
         assert (
             n == 2 or n == 3
         ), "This function only supports pairs and triples."
-        plays: list[Moves] = []
+        moves: list[Moves] = []
         i = (
             bisect_right(self.hand, max(last_play.cards))
             if len(last_play.cards)
@@ -88,12 +97,12 @@ class Player:
                 if len(same_rank) >= n:
                     combos = itertools.combinations(same_rank, n)
                     for c in combos:
-                        plays.append(c)
+                        moves.append(c)
                 if i == len(self.hand):
                     break
                 same_rank.clear()
                 cur_rank = self.hand[i].rank
-        return plays
+        return moves
 
     def _find_four_of_a_kinds_(self, last_play: Play) -> list[Moves]:
         moves: list[Moves] = []

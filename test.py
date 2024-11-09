@@ -282,6 +282,54 @@ def test_validate_full_houses():
     assert len(available_plays) == 14
 
 
+def test_validate_straights():
+    hand = [
+        Card("Spades", "3"),
+        Card("Hearts", "4"),
+        Card("Spades", "6"),
+        Card("Diamonds", "7"),
+        Card("Spades", "7"),
+        Card("Diamonds", "8"),
+        Card("Spades", "9"),
+        Card("Clubs", "10"),
+        Card("Spades", "10"),
+        Card("Diamonds", "3"),
+        Card("Diamonds", "J"),
+        Card("Clubs", "2"),
+        Card("Spades", "A"),
+    ]
+
+    last_play = Play(
+        [
+            Card("Hearts", "6"),
+            Card("Hearts", "7"),
+            Card("Hearts", "8"),
+            Card("Hearts", "9"),
+            Card("Hearts", "10"),
+        ],
+        CardCombination.STRAIGHT,
+    )
+
+    p = Player("Straightington", hand)
+    available_plays = p.find_plays(last_play)
+    validation_list: list[Moves] = [
+        (
+            Card("Spades", "6"),
+            Card("Diamonds", "7"),
+            Card("Diamonds", "8"),
+            Card("Spades", "9"),
+            Card("Spades", "10"),
+        ),
+        (
+            Card("Spades", "6"),
+            Card("Spades", "7"),
+            Card("Diamonds", "8"),
+            Card("Spades", "9"),
+            Card("Spades", "10"),
+        )
+    ]
+
+
 def test_construct_plays():
     pair = [Card("Hearts", "2"), Card("Clubs", "2")]
     assert is_pair(pair)
