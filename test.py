@@ -331,19 +331,33 @@ def test_validate_straights():
             Card("Diamonds", "7"),
             Card("Diamonds", "8"),
             Card("Spades", "9"),
+            Card("Clubs", "10"),
+            Card("Diamonds", "J"),
+        ),
+        (
+            Card("Diamonds", "7"),
+            Card("Diamonds", "8"),
+            Card("Spades", "9"),
             Card("Spades", "10"),
-            Card("Diamonds", "J")
+            Card("Diamonds", "J"),
+        ),
+        (
+            Card("Spades", "7"),
+            Card("Diamonds", "8"),
+            Card("Spades", "9"),
+            Card("Clubs", "10"),
+            Card("Diamonds", "J"),
         ),
         (
             Card("Spades", "7"),
             Card("Diamonds", "8"),
             Card("Spades", "9"),
             Card("Spades", "10"),
-            Card("Diamonds", "J")
-        )
+            Card("Diamonds", "J"),
+        ),
     ]
     validation_set = set(validation_list)
-    assert(available_plays == validation_set)
+    assert available_plays == validation_set
 
 
 def test_construct_plays():

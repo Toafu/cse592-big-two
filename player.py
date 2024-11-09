@@ -73,9 +73,42 @@ class Player:
                 i = bisect_left(
                     self.hand, Card("Diamonds", str(least_viable_rank))
                 )
-                straight_buffer = deque[Card]
+                straight_buffer: deque[Card] = deque()
+                straight_buffer.append(self.hand[i])
+                i += 1
                 while i < len(self.hand):
-                    i += 1
+                    if (
+                        self.hand[i].rank_index()
+                        - straight_buffer[0].rank_index()
+                        >= 5
+                        and straight_buffer[-1].rank_index()
+                        - straight_buffer[0].rank_index()
+                        == 4
+                    ):
+                        possible_moves = self._get_straight_combinations_(
+                            list(straight_buffer)
+                        )
+                        for m in possible_moves:
+                            if last_play < Play(
+                                list(m), CardCombination.STRAIGHT
+                            ):
+                                moves.append(m)
+                        # Remove all instances of the first rank in the deque
+                        rank_to_remove: str = straight_buffer[0].rank
+                        while straight_buffer[0].rank == rank_to_remove:
+                            straight_buffer.popleft()
+                    else:
+                        # Append to deque if rank is same or +1
+                        if (
+                            self.hand[i].rank_index()
+                            - straight_buffer[-1].rank_index()
+                            <= 1
+                        ):
+                            straight_buffer.append(self.hand[i])
+                        else:
+                            straight_buffer.clear()
+                            straight_buffer.append(self.hand[i])
+                        i += 1
                 return moves
         return []
 
@@ -122,10 +155,10 @@ class Player:
                 i += 1
         return moves
 
-    def _get_straight_combinations_(self, cards: Cards):
-        def backtrack(path: list, remaining: Cards):
+    def _get_straight_combinations_(self, cards: Cards) -> list[Moves]:
+        def backtrack(path: Cards, remaining: Cards):
             if len(path) == 5:
-                results.append(path)
+                results.append(tuple(path))
                 return
             if not remaining:
                 return
@@ -133,10 +166,10 @@ class Player:
                 rank = card.rank
                 if rank not in selected_ranks:
                     selected_ranks.add(rank)
-                    backtrack(path + [card], remaining[i+1:])
+                    backtrack(path + [card], remaining[i + 1 :])
                     selected_ranks.remove(rank)
 
-        results = []
+        results: list[Moves] = []
         selected_ranks: set[str] = set()
         backtrack([], cards)
         return results
