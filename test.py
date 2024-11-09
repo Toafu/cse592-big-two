@@ -311,7 +311,7 @@ def test_validate_straights():
     )
 
     p = Player("Straightington", hand)
-    available_plays = p.find_plays(last_play)
+    available_plays = set(p.find_plays(last_play))
     validation_list: list[Moves] = [
         (
             Card("Spades", "6"),
@@ -326,8 +326,24 @@ def test_validate_straights():
             Card("Diamonds", "8"),
             Card("Spades", "9"),
             Card("Spades", "10"),
+        ),
+        (
+            Card("Diamonds", "7"),
+            Card("Diamonds", "8"),
+            Card("Spades", "9"),
+            Card("Spades", "10"),
+            Card("Diamonds", "J")
+        ),
+        (
+            Card("Spades", "7"),
+            Card("Diamonds", "8"),
+            Card("Spades", "9"),
+            Card("Spades", "10"),
+            Card("Diamonds", "J")
         )
     ]
+    validation_set = set(validation_list)
+    assert(available_plays == validation_set)
 
 
 def test_construct_plays():
