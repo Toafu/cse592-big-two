@@ -1,4 +1,5 @@
 from bisect import bisect, bisect_left, bisect_right
+from collections import deque
 import itertools
 import typing
 from card import *
@@ -72,6 +73,7 @@ class Player:
                 i = bisect_left(
                     self.hand, Card("Diamonds", str(least_viable_rank))
                 )
+                straight_buffer = deque[Card]
                 while i < len(self.hand):
                     i += 1
                 return moves
@@ -119,6 +121,25 @@ class Player:
                 moves.append(tuple(quad + [self.hand[i]]))
                 i += 1
         return moves
+
+    def _get_straight_combinations_(self, cards: Cards):
+        def backtrack(path: list, remaining: Cards):
+            if len(path) == 5:
+                results.append(path)
+                return
+            if not remaining:
+                return
+            for i, card in enumerate(remaining):
+                rank = card.rank
+                if rank not in selected_ranks:
+                    selected_ranks.add(rank)
+                    backtrack(path + [card], remaining[i+1:])
+                    selected_ranks.remove(rank)
+
+        results = []
+        selected_ranks: set[str] = set()
+        backtrack([], cards)
+        return results
 
     def has_cards(self):
         return len(self.hand) > 0
