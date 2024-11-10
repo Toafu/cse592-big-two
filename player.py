@@ -144,6 +144,9 @@ class Player:
         freq = Counter([c.rank for c in self.hand])
         quad_ranks = [k for k, v in freq.items() if v == 4]
         for q_rank in quad_ranks:
+            # Skip quads with lower ranks than last_play
+            if Card.ranks[q_rank] < last_play.cards[-1].rank_index():
+                continue
             q_idx = bisect_left(self.hand, Card("Diamonds", q_rank))
             quad = self.hand[q_idx : q_idx + 4]
             i: int = 0

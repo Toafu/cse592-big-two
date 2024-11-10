@@ -176,12 +176,6 @@ def test_validate_fourofakinds():
         Card("Hearts", "7"),
         Card("Spades", "7"),
     ]
-    fourofakind_five = [
-        Card("Diamonds", "5"),
-        Card("Clubs", "5"),
-        Card("Hearts", "5"),
-        Card("Spades", "5"),
-    ]
     everything_else_seven = [
         Card("Spades", "5"),
         Card("Hearts", "3"),
@@ -193,28 +187,23 @@ def test_validate_fourofakinds():
         Card("Diamonds", "5"),
         Card("Diamonds", "Q"),
     ]
-    everything_else_five = [
-        Card("Spades", "7"),
-        Card("Hearts", "3"),
-        Card("Clubs", "7"),
-        Card("Diamonds", "6"),
-        Card("Hearts", "7"),
-        Card("Spades", "J"),
-        Card("Spades", "9"),
-        Card("Diamonds", "7"),
-        Card("Diamonds", "Q"),
-    ]
     p = Player("Quaddington", hand)
     combo = CardCombination.FOUROFAKIND
-    last_play = Play([Card("Spades", "5"), Card("Clubs", "5")], combo)
+    last_play = Play(
+        [
+            Card("Spades", "6"),
+            Card("Clubs", "6"),
+            Card("Hearts", "6"),
+            Card("Diamonds", "6"),
+            Card("Spades", "2"),
+        ],
+        CardCombination.FOUROFAKIND,
+    )
     available_plays = set(p.find_plays(last_play))
     validation_set_sevens = set(
         tuple(fourofakind_seven + [e]) for e in everything_else_seven
     )
-    validation_set_fives = set(
-        tuple(fourofakind_five + [e]) for e in everything_else_five
-    )
-    validation_set = validation_set_fives | validation_set_sevens
+    validation_set = validation_set_sevens
     assert available_plays == validation_set
 
 
