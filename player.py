@@ -143,9 +143,14 @@ class Player:
         moves: list[Moves] = []
         freq = Counter([c.rank for c in self.hand])
         quad_ranks = [k for k, v in freq.items() if v == 4]
+        least_viable_rank_index: int = (
+            last_play.cards[-1].rank_index()
+            if last_play.combination == CardCombination.FOUROFAKIND
+            else -1
+        )
         for q_rank in quad_ranks:
             # Skip quads with lower ranks than last_play
-            if Card.ranks[q_rank] < last_play.cards[-1].rank_index():
+            if Card.ranks[q_rank] < least_viable_rank_index:
                 continue
             q_idx = bisect_left(self.hand, Card("Diamonds", q_rank))
             quad = self.hand[q_idx : q_idx + 4]
