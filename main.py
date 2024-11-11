@@ -1,4 +1,4 @@
-from player import HumanPlayer, Player, Moves
+from player import HumanPlayer, Player, Move
 from card import Card, CardCombination, Deck, Play, identify_combination
 
 
@@ -44,7 +44,7 @@ class BigTwoGame:
             player = self.players[self.current_player_index]
             print(f"\n{player.name}'s turn")
             print("Current Combination:", self.last_play.combination)
-            plays: list[Moves] = player.find_plays(self.last_play)
+            plays: list[Move] = player.find_plays(self.last_play)
 
             if plays:
                 print(f"{player.name} plays: {plays}")

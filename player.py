@@ -3,11 +3,12 @@ from bisect import bisect, bisect_left, bisect_right
 from collections import deque
 import itertools
 import typing
+import random
 from card import *
 
 
 Cards = typing.List[Card]
-Moves = typing.Tuple[Card, ...]
+Move = typing.Tuple[Card, ...]
 
 
 class Player:
@@ -20,7 +21,7 @@ class Player:
     def find_plays(
         self,
         last_play: Play,
-    ) -> list[Moves]:
+    ) -> list[Move]:
         """
         Return all valid plays compatible with the current combination.
 
@@ -46,7 +47,7 @@ class Player:
             case _:
                 search_combinations.append(CardCombination.FOUROFAKIND)
 
-        moves: list[Moves] = []
+        moves: list[Move] = []
         for c in search_combinations:
             match c:
                 case CardCombination.SINGLE:
@@ -150,11 +151,11 @@ class Player:
         else:
             return 0
 
-    def _find_same_rank_combos_(self, last_play: Play, n: int) -> list[Moves]:
+    def _find_same_rank_combos_(self, last_play: Play, n: int) -> list[Move]:
         assert (
             n == 2 or n == 3
         ), "This function only supports pairs and triples."
-        moves: list[Moves] = []
+        moves: list[Move] = []
         i = self._find_first_viable_rank_(last_play)
         if i == -1:
             return []
@@ -175,8 +176,8 @@ class Player:
                 cur_rank = self.hand[i].rank
         return moves
 
-    def _find_four_of_a_kinds_(self, last_play: Play) -> list[Moves]:
-        moves: list[Moves] = []
+    def _find_four_of_a_kinds_(self, last_play: Play) -> list[Move]:
+        moves: list[Move] = []
         freq = Counter([c.rank for c in self.hand])
         quad_ranks = [k for k, v in freq.items() if v == 4]
         least_viable_rank_index: int = (
@@ -202,7 +203,7 @@ class Player:
                 i += 1
         return moves
 
-    def _get_straight_combinations_(self, cards: Cards) -> list[Moves]:
+    def _get_straight_combinations_(self, cards: Cards) -> list[Move]:
         def backtrack(path: Cards, remaining: Cards):
             if len(path) == 5:
                 results.append(tuple(path))
@@ -216,14 +217,15 @@ class Player:
                     backtrack(path + [card], remaining[i + 1 :])
                     selected_ranks.remove(rank)
 
-        results: list[Moves] = []
+        results: list[Move] = []
         selected_ranks: set[str] = set()
         backtrack([], cards)
         return results
 
-    def make_play(self):
+    def make_play(self, last_play: Play) -> Move:
         """Play a combination."""
-
+        possible_plays = self.find_plays(last_play)
+        return random.choice(possible_plays)
 
     def has_cards(self):
         return len(self.hand) > 0
