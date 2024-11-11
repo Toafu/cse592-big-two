@@ -1,4 +1,4 @@
-from player import HumanPlayer, Player
+from player import HumanPlayer, Player, Moves
 from card import Card, CardCombination, Deck, Play, identify_combination
 
 
@@ -20,13 +20,13 @@ class BigTwoGame:
         # variable to track passes
         self.passes = [False] * len(self.players)
 
-        # the current player index would be for the player holding the 3 of diamonds
-        # check for 3 of diamonds
+        # the current player index starts as the player with the 3 of diamonds
         for i in range(len(self.players)):
             lowestCard: Card = self.players[i].hand[0]
 
             if lowestCard == Card("Diamonds", "3"):
                 self.current_player_index = i
+                break
         self.last_play: Play = Play()
         self.current_combination = CardCombination.ANY
 
@@ -37,26 +37,26 @@ class BigTwoGame:
 
     def play_round(self):
         # to check if all other players have passed their turn
-        if self.check_other_passes():
+        while not self.check_other_passes():
             print("All other players have passed ")
             print("Now the player can decide which combination to play")
-            self.current_combination = CardCombination.ANY
-        player = self.players[self.current_player_index]
-        print(f"\n{player.name}'s turn")
-        print("Current Combination:", self.current_combination.name)
-        play = player.find_plays(self.last_play)
+            self.last_play = Play()
+            player = self.players[self.current_player_index]
+            print(f"\n{player.name}'s turn")
+            print("Current Combination:", self.last_play.combination)
+            plays: list[Moves] = player.find_plays(self.last_play)
 
-        if play:
-            print(f"{player.name} plays: {play}")
-            # TODO: FIX THIS BANDAID
-            self.last_play = Play(
-                list(play[0]), identify_combination(list(play[0]))
-            )
-        else:
-            print(f"{player.name} passes")
-            self.passes[self.current_player_index] = True
+            if plays:
+                print(f"{player.name} plays: {plays}")
+                # TODO: FIX THIS BANDAID
+                self.last_play = Play(
+                    list(plays[0]), identify_combination(list(plays[0]))
+                )
+            else:
+                print(f"{player.name} passes")
+                self.passes[self.current_player_index] = True
 
-        self.next_player()
+            self.next_player()
 
     # function to check if all the other players have passed their turn
     def check_other_passes(self):

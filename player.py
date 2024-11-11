@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from bisect import bisect, bisect_left, bisect_right
 from collections import deque
 import itertools
@@ -219,6 +220,10 @@ class Player:
         selected_ranks: set[str] = set()
         backtrack([], cards)
         return results
+
+    def make_play(self):
+        """Play a combination."""
+
 
     def has_cards(self):
         return len(self.hand) > 0
