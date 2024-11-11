@@ -258,7 +258,9 @@ def test_validate_fourofakind_special():
         Card("Diamonds", "Q"),
     ]
     p = Player("Quaddington", hand)
-    last_play = Play([Card("Spades", "A"), Card("Clubs", "A")], CardCombination.PAIR)
+    last_play = Play(
+        [Card("Spades", "A"), Card("Clubs", "A")], CardCombination.PAIR
+    )
     available_plays = set(p.find_plays(last_play))
     validation_set_sevens = set(
         tuple(fourofakind_seven + [e]) for e in everything_else_seven

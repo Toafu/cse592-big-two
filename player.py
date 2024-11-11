@@ -25,92 +25,106 @@ class Player:
 
         Filter out all plays worse than last_play.
         """
+        assert last_play.combination != CardCombination.INVALID
+        all_combos: list[CardCombination] = [
+            CardCombination.SINGLE,
+            CardCombination.PAIR,
+            CardCombination.TRIPLE,
+            CardCombination.FULLHOUSE,
+            CardCombination.STRAIGHT,
+            CardCombination.FOUROFAKIND,
+        ]
 
-        match last_play.combination:
-            # TODO: Integrate FOUROFAKIND into all of these
-            # TODO: Integrate ANY
-            case CardCombination.SINGLE:
-                return [
-                    (self.hand[i],)  # Single element tuple
-                    for i in range(
-                        bisect_right(self.hand, last_play.cards[0]),
-                        len(self.hand),
-                    )
-                ]
-            case CardCombination.PAIR:
-                return self._find_same_rank_combos_(last_play, 2)
-            case CardCombination.TRIPLE:
-                return self._find_same_rank_combos_(last_play, 3)
-            case CardCombination.FOUROFAKIND:
-                return self._find_four_of_a_kinds_(last_play)
-            case CardCombination.FULLHOUSE:
-                # Only the triple matters, so any pair should be allowed
-                pairs = self._find_same_rank_combos_(
-                    Play(
-                        [],
-                        CardCombination.PAIR,
-                    ),
-                    2,
-                )
-                triples = self._find_same_rank_combos_(
-                    Play(last_play.cards[2:], CardCombination.TRIPLE), 3
-                )
-                return [
-                    *(
-                        (p + t)
-                        for p in pairs
-                        for t in triples
-                        if p[0].rank != t[0].rank
-                    )
-                ]
-            case CardCombination.STRAIGHT:
-                # Cursed dynamic sliding window
-                moves: list[Moves] = []
-                best_card_in_play = max(last_play.cards)
-                least_viable_rank = list(Card.ranks)[
-                    best_card_in_play.rank_index() - 4
-                ]
-                i = bisect_left(
-                    self.hand, Card("Diamonds", str(least_viable_rank))
-                )
-                straight_buffer: deque[Card] = deque()
-                straight_buffer.append(self.hand[i])
-                i += 1
-                while i < len(self.hand):
-                    if (
-                        self.hand[i].rank_index()
-                        - straight_buffer[0].rank_index()
-                        >= 5
-                        and straight_buffer[-1].rank_index()
-                        - straight_buffer[0].rank_index()
-                        == 4
-                    ):
-                        possible_moves = self._get_straight_combinations_(
-                            list(straight_buffer)
+        search_combinations: list[CardCombination] = (
+            [last_play.combination]
+            if last_play.combination != CardCombination.ANY
+            else all_combos
+        )
+
+        moves: list[Moves] = []
+        for c in search_combinations:
+            match c:
+                # TODO: Integrate FOUROFAKIND into all of these
+                case CardCombination.SINGLE:
+                    return [
+                        (self.hand[i],)  # Single element tuple
+                        for i in range(
+                            bisect_right(self.hand, last_play.cards[0]),
+                            len(self.hand),
                         )
-                        for m in possible_moves:
-                            if last_play < Play(
-                                list(m), CardCombination.STRAIGHT
-                            ):
-                                moves.append(m)
-                        # Remove all instances of the first rank in the deque
-                        rank_to_remove: str = straight_buffer[0].rank
-                        while straight_buffer[0].rank == rank_to_remove:
-                            straight_buffer.popleft()
-                    else:
-                        # Append to deque if rank is same or +1
+                    ]
+                case CardCombination.PAIR:
+                    return self._find_same_rank_combos_(last_play, 2)
+                case CardCombination.TRIPLE:
+                    return self._find_same_rank_combos_(last_play, 3)
+                case CardCombination.FOUROFAKIND:
+                    return self._find_four_of_a_kinds_(last_play)
+                case CardCombination.FULLHOUSE:
+                    # Only the triple matters, so any pair should be allowed
+                    pairs = self._find_same_rank_combos_(
+                        Play(
+                            [],
+                            CardCombination.PAIR,
+                        ),
+                        2,
+                    )
+                    triples = self._find_same_rank_combos_(
+                        Play(last_play.cards[2:], CardCombination.TRIPLE), 3
+                    )
+                    return [
+                        *(
+                            (p + t)
+                            for p in pairs
+                            for t in triples
+                            if p[0].rank != t[0].rank
+                        )
+                    ]
+                case CardCombination.STRAIGHT:
+                    # Cursed dynamic sliding window
+                    best_card_in_play = max(last_play.cards)
+                    least_viable_rank = list(Card.ranks)[
+                        best_card_in_play.rank_index() - 4
+                    ]
+                    i = bisect_left(
+                        self.hand, Card("Diamonds", str(least_viable_rank))
+                    )
+                    straight_buffer: deque[Card] = deque()
+                    straight_buffer.append(self.hand[i])
+                    i += 1
+                    while i < len(self.hand):
                         if (
                             self.hand[i].rank_index()
-                            - straight_buffer[-1].rank_index()
-                            <= 1
+                            - straight_buffer[0].rank_index()
+                            >= 5
+                            and straight_buffer[-1].rank_index()
+                            - straight_buffer[0].rank_index()
+                            == 4
                         ):
-                            straight_buffer.append(self.hand[i])
+                            possible_moves = self._get_straight_combinations_(
+                                list(straight_buffer)
+                            )
+                            for m in possible_moves:
+                                if last_play < Play(
+                                    list(m), CardCombination.STRAIGHT
+                                ):
+                                    moves.append(m)
+                            # Remove all instances of the first rank in the deque
+                            rank_to_remove: str = straight_buffer[0].rank
+                            while straight_buffer[0].rank == rank_to_remove:
+                                straight_buffer.popleft()
                         else:
-                            straight_buffer.clear()
-                            straight_buffer.append(self.hand[i])
-                        i += 1
-                return moves
-        return []
+                            # Append to deque if rank is same or +1
+                            if (
+                                self.hand[i].rank_index()
+                                - straight_buffer[-1].rank_index()
+                                <= 1
+                            ):
+                                straight_buffer.append(self.hand[i])
+                            else:
+                                straight_buffer.clear()
+                                straight_buffer.append(self.hand[i])
+                            i += 1
+        return moves
 
     def _find_same_rank_combos_(self, last_play: Play, n: int) -> list[Moves]:
         assert (
