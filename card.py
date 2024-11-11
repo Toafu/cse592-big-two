@@ -182,6 +182,7 @@ class Play:
 
     def __lt__(self, other: "Play"):
         """Determine if self's Play < other's Play."""
+        # All plays are better than ANY
         if (
             self.combination == CardCombination.ANY
             and other.combination != CardCombination.ANY
@@ -192,6 +193,7 @@ class Play:
             and other.combination == CardCombination.ANY
         ):
             return False
+        # Four of a kinds beat all non four of a kinds
         if (
             self.combination != CardCombination.FOUROFAKIND
             and other.combination == CardCombination.FOUROFAKIND
@@ -202,6 +204,10 @@ class Play:
             and other.combination != CardCombination.FOUROFAKIND
         ):
             return False
+        # At this point there are no more special rules
+        if self.combination != other.combination:
+            return False
+        # Normal same combination compare
         return self.cards[-1] < other.cards[-1]
 
 

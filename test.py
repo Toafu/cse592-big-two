@@ -559,3 +559,24 @@ def test_play_fourofakind_on_single():
     validation_set.add((Card("Clubs", "K"),))
 
     assert set(p.find_plays(last_play)) == validation_set
+
+
+def test_invalid_combos():
+    single_ten = Play([Card("Spades", "10")], CardCombination.SINGLE)
+    pair_twos = Play(
+        [Card("Spades", "2"), Card("Diamonds", "2")], CardCombination.PAIR
+    )
+    straight_six_ten = Play(
+        [
+            Card("Hearts", "6"),
+            Card("Hearts", "7"),
+            Card("Hearts", "8"),
+            Card("Hearts", "9"),
+            Card("Hearts", "10"),
+        ],
+        CardCombination.STRAIGHT,
+    )
+    assert not single_ten < pair_twos
+    assert not pair_twos < single_ten
+    assert not straight_six_ten < single_ten
+    assert not single_ten < straight_six_ten
