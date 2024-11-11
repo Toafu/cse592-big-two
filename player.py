@@ -50,7 +50,7 @@ class Player:
                 # TODO: Integrate FOUROFAKIND into all of these
                 case CardCombination.SINGLE:
                     begin_bound = self._find_first_viable_rank_(last_play)
-                    return [
+                    moves += [
                         (self.hand[i],)  # Single element tuple
                         for i in range(
                             begin_bound,
@@ -58,11 +58,11 @@ class Player:
                         )
                     ]
                 case CardCombination.PAIR:
-                    return self._find_same_rank_combos_(last_play, 2)
+                    moves += self._find_same_rank_combos_(last_play, 2)
                 case CardCombination.TRIPLE:
-                    return self._find_same_rank_combos_(last_play, 3)
+                    moves += self._find_same_rank_combos_(last_play, 3)
                 case CardCombination.FOUROFAKIND:
-                    return self._find_four_of_a_kinds_(last_play)
+                    moves += self._find_four_of_a_kinds_(last_play)
                 case CardCombination.FULLHOUSE:
                     # Only the triple matters, so any pair should be allowed
                     pairs = self._find_same_rank_combos_(
@@ -75,7 +75,7 @@ class Player:
                     triples = self._find_same_rank_combos_(
                         Play(last_play.cards[2:], CardCombination.TRIPLE), 3
                     )
-                    return [
+                    moves += [
                         *(
                             (p + t)
                             for p in pairs
@@ -112,7 +112,7 @@ class Player:
                                     list(m), CardCombination.STRAIGHT
                                 ):
                                     moves.append(m)
-                            # Remove all instances of the first rank in the deque
+                            # Remove all instances of the first rank in deque
                             rank_to_remove: str = straight_buffer[0].rank
                             while straight_buffer[0].rank == rank_to_remove:
                                 straight_buffer.popleft()
