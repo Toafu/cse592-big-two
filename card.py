@@ -2,6 +2,7 @@ import random
 import itertools
 from enum import Enum
 from collections import Counter
+from functools import total_ordering
 import typing
 
 
@@ -61,6 +62,7 @@ class Card:
         return Card.suits[self.suit]
 
 
+@total_ordering
 class CardCombination(Enum):
     """Represent a combination."""
 
@@ -72,6 +74,9 @@ class CardCombination(Enum):
     FULLHOUSE = 3
     STRAIGHT = 4
     FOUROFAKIND = 5
+
+    def __lt__(self, other: "CardCombination"):
+        return self.value < other.value
 
 
 Cards = typing.List[Card]

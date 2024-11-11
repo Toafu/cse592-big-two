@@ -89,6 +89,11 @@ def test_compare_fourofakinds():
     )
 
 
+def test_compare_cardcombinations():
+    assert CardCombination.SINGLE < CardCombination.TRIPLE
+    assert CardCombination.PAIR == CardCombination.PAIR
+
+
 def test_validate_singles():
     hand = [
         Card("Diamonds", "J"),

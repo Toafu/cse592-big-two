@@ -222,10 +222,11 @@ class Player:
         backtrack([], cards)
         return results
 
-    def make_play(self, last_play: Play) -> Move:
+    def make_play(self, last_play: Play) -> Play:
         """Play a combination."""
         possible_plays = self.find_plays(last_play)
-        return random.choice(possible_plays)
+        cards: Cards = list(random.choice(possible_plays))
+        return Play(cards, identify_combination(cards))
 
     def has_cards(self):
         return len(self.hand) > 0
