@@ -23,9 +23,9 @@ class BigTwoGame:
         # the current player index would be for the player holding the 3 of diamonds
         # check for 3 of diamonds
         for i in range(len(self.players)):
-            lowestCard = self.players[i].hand[0]
+            lowestCard: Card = self.players[i].hand[0]
 
-            if lowestCard.suit == "Diamonds" and lowestCard.rank == "3":
+            if lowestCard == Card("Diamonds", "3"):
                 self.current_player_index = i
         self.last_play: Play = Play()
         self.current_combination = CardCombination.ANY

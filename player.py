@@ -26,7 +26,6 @@ class Player:
         Filter out all plays worse than last_play.
         """
         assert last_play.combination != CardCombination.INVALID
-        # The ONLY time last_play is ANY is if it is empty.
         if last_play.combination == CardCombination.ANY:
             assert len(last_play.cards) == 0
         all_combos: list[CardCombination] = [
@@ -37,19 +36,22 @@ class Player:
             CardCombination.STRAIGHT,
             CardCombination.FOUROFAKIND,
         ]
-
-        search_combinations: list[CardCombination] = (
-            [last_play.combination]
-            if last_play.combination != CardCombination.ANY
-            else all_combos
-        )
+        search_combinations: list[CardCombination] = [last_play.combination]
+        match last_play.combination:
+            case CardCombination.ANY:
+                search_combinations = all_combos
+            case CardCombination.FOUROFAKIND:
+                pass  # Do nothing extra
+            case _:
+                search_combinations.append(CardCombination.FOUROFAKIND)
 
         moves: list[Moves] = []
         for c in search_combinations:
             match c:
-                # TODO: Integrate FOUROFAKIND into all of these
                 case CardCombination.SINGLE:
                     begin_bound = self._find_first_viable_rank_(last_play)
+                    if begin_bound == -1:
+                        continue
                     moves += [
                         (self.hand[i],)  # Single element tuple
                         for i in range(
@@ -133,11 +135,19 @@ class Player:
         return moves
 
     def _find_first_viable_rank_(self, last_play: Play) -> int:
-        return (
-            bisect_right(self.hand, max(last_play.cards))
-            if len(last_play.cards)
-            else 0
-        )
+        """
+        Return index of first valid card to be considered.
+
+        Returns 0 if all cards are viable.
+        Returns -1 if no cards are viable.
+        """
+        if len(last_play.cards):
+            i = bisect_right(self.hand, max(last_play.cards))
+            if i == len(self.hand):
+                return -1
+            return i
+        else:
+            return 0
 
     def _find_same_rank_combos_(self, last_play: Play, n: int) -> list[Moves]:
         assert (
@@ -145,6 +155,8 @@ class Player:
         ), "This function only supports pairs and triples."
         moves: list[Moves] = []
         i = self._find_first_viable_rank_(last_play)
+        if i == -1:
+            return []
         same_rank: list[Card] = []
         cur_rank = self.hand[i].rank
         while i <= len(self.hand):
@@ -167,7 +179,12 @@ class Player:
         freq = Counter([c.rank for c in self.hand])
         quad_ranks = [k for k, v in freq.items() if v == 4]
         least_viable_rank_index: int = (
-            last_play.cards[-1].rank_index() if len(last_play.cards) else -1
+            last_play.cards[-1].rank_index()
+            if (
+                len(last_play.cards)
+                and last_play.combination == CardCombination.FOUROFAKIND
+            )
+            else -1
         )
         for q_rank in quad_ranks:
             # Skip quads with lower ranks than last_play

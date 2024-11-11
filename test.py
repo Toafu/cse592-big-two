@@ -143,6 +143,29 @@ def test_validate_pairs():
         assert Play(list(move), combo) < last_play
 
 
+def test_validate_pairs_none():
+    hand = [
+        Card("Spades", "7"),
+        Card("Hearts", "5"),
+        Card("Hearts", "7"),
+        Card("Spades", "3"),
+        Card("Clubs", "Q"),
+        Card("Diamonds", "5"),
+        Card("Hearts", "3"),
+        Card("Diamonds", "J"),
+        Card("Diamonds", "6"),
+        Card("Spades", "J"),
+        Card("Spades", "9"),
+        Card("Diamonds", "Q"),
+        Card("Clubs", "7"),
+    ]
+    p = Player("Pairington", hand)
+    combo = CardCombination.PAIR
+    last_play = Play([Card("Spades", "2"), Card("Clubs", "2")], combo)
+    available_plays = p.find_plays(last_play)
+    assert len(available_plays) == 0
+
+
 def test_validate_fourofakinds_normal():
     hand = [
         Card("Spades", "3"),
@@ -207,7 +230,7 @@ def test_validate_fourofakinds_normal():
     assert available_plays == validation_set
 
 
-def test_validate_fourofakind_special():
+def test_validate_fourofakinds_special():
     hand = [
         Card("Spades", "7"),
         Card("Hearts", "5"),
@@ -505,10 +528,34 @@ def test_start_game():
     """
     num_plays = 13 + 10 + 5 + 9 + 23
     p = Player("Toafu", hand)
-    assert len(p.find_plays(Play([], CardCombination.SINGLE))) == 13
-    assert len(p.find_plays(Play([], CardCombination.PAIR))) == 10
-    assert len(p.find_plays(Play([], CardCombination.TRIPLE))) == 5
+    # Since quads can be played "any time", we cannot overcount them
+    # Subtract 9 from all play counts (except quad) to not double count them
+    assert len(p.find_plays(Play([], CardCombination.SINGLE))) - 9 == 13
+    assert len(p.find_plays(Play([], CardCombination.PAIR))) - 9 == 10
+    assert len(p.find_plays(Play([], CardCombination.TRIPLE))) - 9 == 5
     assert len(p.find_plays(Play([], CardCombination.FOUROFAKIND))) == 9
-    assert len(p.find_plays(Play([], CardCombination.STRAIGHT))) == 0
-    assert len(p.find_plays(Play([], CardCombination.FULLHOUSE))) == 23
+    assert len(p.find_plays(Play([], CardCombination.STRAIGHT))) - 9 == 0
+    assert len(p.find_plays(Play([], CardCombination.FULLHOUSE))) - 9 == 23
     assert len(p.find_plays(Play())) == num_plays
+
+
+def test_play_fourofakind_on_single():
+    hand = [
+        Card("Clubs", "3"),
+        Card("Hearts", "3"),
+        Card("Diamonds", "3"),
+        Card("Spades", "3"),
+        Card("Clubs", "7"),
+        Card("Diamonds", "10"),
+        Card("Clubs", "K"),
+    ]
+
+    last_play = Play([Card("Spades", "9")], CardCombination.SINGLE)
+    p = Player("", hand)
+    validation_set = set()
+    for quad in p.find_plays(Play([], CardCombination.FOUROFAKIND)):
+        validation_set.add(quad)
+    validation_set.add((Card("Diamonds", "10"),))
+    validation_set.add((Card("Clubs", "K"),))
+
+    assert set(p.find_plays(last_play)) == validation_set
