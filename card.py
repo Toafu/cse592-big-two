@@ -156,7 +156,11 @@ class Play:
     Can be compared with other Plays.
     """
 
-    def __init__(self, cards: Cards, combination: CardCombination):
+    def __init__(
+        self,
+        cards: Cards = [],
+        combination: CardCombination = CardCombination.ANY,
+    ):
         """
         Initialize a Play object, standardizing the order of cards.
         Put Cards that need to be compared at the back of the Play.

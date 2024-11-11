@@ -27,7 +27,7 @@ class BigTwoGame:
 
             if lowestCard.suit == "Diamonds" and lowestCard.rank == "3":
                 self.current_player_index = i
-        self.last_play: Play = Play([], CardCombination.ANY)
+        self.last_play: Play = Play()
         self.current_combination = CardCombination.ANY
 
     def next_player(self):

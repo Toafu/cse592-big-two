@@ -26,8 +26,8 @@ class Player:
         Filter out all plays worse than last_play.
         """
         assert last_play.combination != CardCombination.INVALID
+        # The ONLY time last_play is ANY is if it is empty.
         if last_play.combination == CardCombination.ANY:
-            # The ONLY time last_play is ANY is if it is empty.
             assert len(last_play.cards) == 0
         all_combos: list[CardCombination] = [
             CardCombination.SINGLE,
@@ -65,13 +65,7 @@ class Player:
                     moves += self._find_four_of_a_kinds_(last_play)
                 case CardCombination.FULLHOUSE:
                     # Only the triple matters, so any pair should be allowed
-                    pairs = self._find_same_rank_combos_(
-                        Play(
-                            [],
-                            CardCombination.ANY,
-                        ),
-                        2,
-                    )
+                    pairs = self._find_same_rank_combos_(Play(), 2)
                     triples = self._find_same_rank_combos_(
                         Play(last_play.cards[2:], CardCombination.TRIPLE), 3
                     )
