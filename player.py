@@ -8,7 +8,6 @@ from card import *
 
 
 Cards = typing.List[Card]
-Move = typing.Tuple[Card, ...]
 
 
 class Player:
@@ -21,7 +20,7 @@ class Player:
     def find_plays(
         self,
         last_play: Play,
-    ) -> list[Move]:
+    ) -> list[Play]:
         """
         Return all valid plays compatible with the current combination.
 
@@ -47,7 +46,7 @@ class Player:
             case _:
                 search_combinations.append(CardCombination.FOUROFAKIND)
 
-        moves: list[Move] = []
+        moves: list[Play] = []
         for c in search_combinations:
             match c:
                 case CardCombination.SINGLE:
@@ -55,7 +54,7 @@ class Player:
                     if begin_bound == -1:
                         continue
                     moves += [
-                        (self.hand[i],)  # Single element tuple
+                        Play([self.hand[i]], c)
                         for i in range(
                             begin_bound,
                             len(self.hand),
@@ -74,12 +73,10 @@ class Player:
                         Play(last_play.cards[2:], CardCombination.TRIPLE), 3
                     )
                     moves += [
-                        *(
-                            (p + t)
-                            for p in pairs
-                            for t in triples
-                            if p[0].rank != t[0].rank
-                        )
+                        Play(p.cards + t.cards, c)
+                        for p in pairs
+                        for t in triples
+                        if p.cards[0].rank != t.cards[0].rank
                     ]
                 case CardCombination.STRAIGHT:
                     # Cursed dynamic sliding window
@@ -110,14 +107,12 @@ class Player:
                             - straight_buffer[0].rank_index()
                             == 4
                         ):
-                            possible_moves = self._get_straight_combinations_(
+                            possible_plays = self._get_straight_combinations_(
                                 list(straight_buffer)
                             )
-                            for m in possible_moves:
-                                if last_play < Play(
-                                    list(m), CardCombination.STRAIGHT
-                                ):
-                                    moves.append(m)
+                            for p in possible_plays:
+                                if last_play < p:
+                                    moves.append(p)
                             # Remove all instances of the first rank in deque
                             rank_to_remove: str = straight_buffer[0].rank
                             while straight_buffer[0].rank == rank_to_remove:
@@ -151,11 +146,14 @@ class Player:
         else:
             return 0
 
-    def _find_same_rank_combos_(self, last_play: Play, n: int) -> list[Move]:
+    def _find_same_rank_combos_(self, last_play: Play, n: int) -> list[Play]:
         assert (
             n == 2 or n == 3
         ), "This function only supports pairs and triples."
-        moves: list[Move] = []
+        combination = (
+            CardCombination.PAIR if n == 2 else CardCombination.TRIPLE
+        )
+        moves: list[Play] = []
         i = self._find_first_viable_rank_(last_play)
         if i == -1:
             return []
@@ -169,15 +167,15 @@ class Player:
                 if len(same_rank) >= n:
                     combos = itertools.combinations(same_rank, n)
                     for c in combos:
-                        moves.append(c)
+                        moves.append(Play(list(c), combination))
                 if i == len(self.hand):
                     break
                 same_rank.clear()
                 cur_rank = self.hand[i].rank
         return moves
 
-    def _find_four_of_a_kinds_(self, last_play: Play) -> list[Move]:
-        moves: list[Move] = []
+    def _find_four_of_a_kinds_(self, last_play: Play) -> list[Play]:
+        moves: list[Play] = []
         freq = Counter([c.rank for c in self.hand])
         quad_ranks = [k for k, v in freq.items() if v == 4]
         least_viable_rank_index: int = (
@@ -199,14 +197,16 @@ class Player:
                 if i == q_idx:
                     i += 4
                     continue
-                moves.append(tuple(quad + [self.hand[i]]))
+                moves.append(
+                    Play(quad + [self.hand[i]], CardCombination.FOUROFAKIND)
+                )
                 i += 1
         return moves
 
-    def _get_straight_combinations_(self, cards: Cards) -> list[Move]:
-        def backtrack(path: Cards, remaining: Cards):
-            if len(path) == 5:
-                results.append(tuple(path))
+    def _get_straight_combinations_(self, cards: Cards) -> list[Play]:
+        def backtrack(hand: Cards, remaining: Cards):
+            if len(hand) == 5:
+                results.append(Play(hand, CardCombination.STRAIGHT))
                 return
             if not remaining:
                 return
@@ -214,19 +214,17 @@ class Player:
                 rank = card.rank
                 if rank not in selected_ranks:
                     selected_ranks.add(rank)
-                    backtrack(path + [card], remaining[i + 1 :])
+                    backtrack(hand + [card], remaining[i + 1 :])
                     selected_ranks.remove(rank)
 
-        results: list[Move] = []
+        results: list[Play] = []
         selected_ranks: set[str] = set()
         backtrack([], cards)
         return results
 
     def make_play(self, last_play: Play) -> Play:
         """Play a combination."""
-        possible_plays = self.find_plays(last_play)
-        cards: Cards = list(random.choice(possible_plays))
-        return Play(cards, identify_combination(cards))
+        return random.choice(self.find_plays(last_play))
 
     def has_cards(self):
         return len(self.hand) > 0

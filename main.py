@@ -1,4 +1,4 @@
-from player import HumanPlayer, Player, Move
+from player import HumanPlayer, Player
 from card import Card, CardCombination, Deck, Play, identify_combination
 
 
@@ -44,14 +44,12 @@ class BigTwoGame:
             player = self.players[self.current_player_index]
             print(f"\n{player.name}'s turn")
             print("Current Combination:", self.last_play.combination)
-            plays: list[Move] = player.find_plays(self.last_play)
+            plays: list[Play] = player.find_plays(self.last_play)
 
             if plays:
                 print(f"{player.name} plays: {plays}")
-                # TODO: FIX THIS BANDAID
-                self.last_play = Play(
-                    list(plays[0]), identify_combination(list(plays[0]))
-                )
+                # TODO: Make sure cards get removed in make_play
+                self.last_play = player.make_play(self.last_play)
             else:
                 print(f"{player.name} passes")
                 self.passes[self.current_player_index] = True
@@ -61,7 +59,7 @@ class BigTwoGame:
     # function to check if all the other players have passed their turn
     def check_other_passes(self):
         for i, has_passed in enumerate(self.passes):
-            # Skip the current player and check if any other player has not passed
+            # Skip current player and check if any other player hasn't passed
             if i != self.current_player_index and not has_passed:
                 return False
         return True

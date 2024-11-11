@@ -10,6 +10,7 @@ def test_compare_pairs():
 
     kings = Play([Card("Diamonds", "K"), Card("Spades", "K")], PAIR)
     fives = Play([Card("Clubs", "5"), Card("Hearts", "5")], PAIR)
+    assert fives == fives
     assert fives < kings
 
 
@@ -111,8 +112,8 @@ def test_validate_singles():
     split = bisect_right(p.hand, last_play.cards[0])
     unavailable_plays = [[i] for i in p.hand[0:split]]
 
-    for moves in available_plays:
-        assert last_play < Play(list(moves), combo)
+    for play in available_plays:
+        assert last_play < play
 
     for cards in unavailable_plays:
         assert Play(cards, combo) < last_play
@@ -138,14 +139,12 @@ def test_validate_pairs():
     combo = CardCombination.PAIR
     last_play = Play([Card("Spades", "5"), Card("Clubs", "5")], combo)
     available_plays = p.find_plays(last_play)
-    all_plays = p.find_plays(
-        Play([Card("Clubs", "3"), Card("Diamonds", "3")], combo)
-    )
+    all_plays = p.find_plays(Play([], combo))
     unavailable_plays = set(all_plays) - set(available_plays)
-    for move in available_plays:
-        assert last_play < Play(list(move), combo)
-    for move in unavailable_plays:
-        assert Play(list(move), combo) < last_play
+    for play in available_plays:
+        assert last_play < play
+    for play in unavailable_plays:
+        assert play < last_play
 
 
 def test_validate_pairs_none():
@@ -228,8 +227,9 @@ def test_validate_fourofakinds_normal():
         CardCombination.FOUROFAKIND,
     )
     available_plays = set(p.find_plays(last_play))
-    validation_set_sevens = set(
-        tuple(fourofakind_seven + [e]) for e in everything_else_seven
+    validation_set_sevens: set[Play] = set(
+        Play(fourofakind_seven + [e], CardCombination.FOUROFAKIND)
+        for e in everything_else_seven
     )
     validation_set = validation_set_sevens
     assert available_plays == validation_set
@@ -290,11 +290,13 @@ def test_validate_fourofakinds_special():
         [Card("Spades", "A"), Card("Clubs", "A")], CardCombination.PAIR
     )
     available_plays = set(p.find_plays(last_play))
-    validation_set_sevens = set(
-        tuple(fourofakind_seven + [e]) for e in everything_else_seven
+    validation_set_sevens: set[Play] = set(
+        Play(fourofakind_seven + [e], CardCombination.FOUROFAKIND)
+        for e in everything_else_seven
     )
-    validation_set_fives = set(
-        tuple(fourofakind_five + [e]) for e in everything_else_five
+    validation_set_fives: set[Play] = set(
+        Play(fourofakind_five + [e], CardCombination.FOUROFAKIND)
+        for e in everything_else_five
     )
     validation_set = validation_set_fives | validation_set_sevens
     assert available_plays == validation_set
@@ -390,49 +392,68 @@ def test_validate_straights():
     )
 
     p = Player("Straightington", hand)
+    combo = CardCombination.STRAIGHT
     available_plays = set(p.find_plays(last_play))
-    validation_list: list[Move] = [
-        (
-            Card("Spades", "6"),
-            Card("Diamonds", "7"),
-            Card("Diamonds", "8"),
-            Card("Spades", "9"),
-            Card("Spades", "10"),
+    validation_list: list[Play] = [
+        Play(
+            [
+                Card("Spades", "6"),
+                Card("Diamonds", "7"),
+                Card("Diamonds", "8"),
+                Card("Spades", "9"),
+                Card("Spades", "10"),
+            ],
+            combo,
         ),
-        (
-            Card("Spades", "6"),
-            Card("Spades", "7"),
-            Card("Diamonds", "8"),
-            Card("Spades", "9"),
-            Card("Spades", "10"),
+        Play(
+            [
+                Card("Spades", "6"),
+                Card("Spades", "7"),
+                Card("Diamonds", "8"),
+                Card("Spades", "9"),
+                Card("Spades", "10"),
+            ],
+            combo,
         ),
-        (
-            Card("Diamonds", "7"),
-            Card("Diamonds", "8"),
-            Card("Spades", "9"),
-            Card("Clubs", "10"),
-            Card("Diamonds", "J"),
+        Play(
+            [
+                Card("Diamonds", "7"),
+                Card("Diamonds", "8"),
+                Card("Spades", "9"),
+                Card("Clubs", "10"),
+                Card("Diamonds", "J"),
+            ],
+            combo,
         ),
-        (
-            Card("Diamonds", "7"),
-            Card("Diamonds", "8"),
-            Card("Spades", "9"),
-            Card("Spades", "10"),
-            Card("Diamonds", "J"),
+        Play(
+            [
+                Card("Diamonds", "7"),
+                Card("Diamonds", "8"),
+                Card("Spades", "9"),
+                Card("Spades", "10"),
+                Card("Diamonds", "J"),
+            ],
+            combo,
         ),
-        (
-            Card("Spades", "7"),
-            Card("Diamonds", "8"),
-            Card("Spades", "9"),
-            Card("Clubs", "10"),
-            Card("Diamonds", "J"),
+        Play(
+            [
+                Card("Spades", "7"),
+                Card("Diamonds", "8"),
+                Card("Spades", "9"),
+                Card("Clubs", "10"),
+                Card("Diamonds", "J"),
+            ],
+            combo,
         ),
-        (
-            Card("Spades", "7"),
-            Card("Diamonds", "8"),
-            Card("Spades", "9"),
-            Card("Spades", "10"),
-            Card("Diamonds", "J"),
+        Play(
+            [
+                Card("Spades", "7"),
+                Card("Diamonds", "8"),
+                Card("Spades", "9"),
+                Card("Spades", "10"),
+                Card("Diamonds", "J"),
+            ],
+            combo,
         ),
     ]
     validation_set = set(validation_list)
@@ -557,13 +578,16 @@ def test_play_fourofakind_on_single():
 
     last_play = Play([Card("Spades", "9")], CardCombination.SINGLE)
     p = Player("", hand)
-    validation_set = set()
+    validation_set: set[Play] = set()
     for quad in p.find_plays(Play([], CardCombination.FOUROFAKIND)):
         validation_set.add(quad)
-    validation_set.add((Card("Diamonds", "10"),))
-    validation_set.add((Card("Clubs", "K"),))
-
-    assert set(p.find_plays(last_play)) == validation_set
+    validation_set.add(Play([Card("Diamonds", "10")], CardCombination.SINGLE))
+    validation_set.add(Play([Card("Clubs", "K")], CardCombination.SINGLE))
+    available_plays = set(p.find_plays(last_play))
+    for play in p.find_plays(last_play):
+        assert play in validation_set
+    for play in validation_set:
+        assert play in available_plays
 
 
 def test_invalid_combos():

@@ -66,14 +66,14 @@ class Card:
 class CardCombination(Enum):
     """Represent a combination."""
 
-    INVALID = -999
-    ANY = -1
-    SINGLE = 0
-    PAIR = 1
-    TRIPLE = 2
-    FULLHOUSE = 3
-    STRAIGHT = 4
-    FOUROFAKIND = 5
+    INVALID = -1
+    ANY = 0
+    SINGLE = 1
+    PAIR = 2
+    TRIPLE = 3
+    FULLHOUSE = 4
+    STRAIGHT = 5
+    FOUROFAKIND = 6
 
     def __lt__(self, other: "CardCombination"):
         return self.value < other.value
@@ -185,6 +185,9 @@ class Play:
             case CardCombination.INVALID:
                 assert False, "Combination must be valid"
 
+    def __repr__(self):
+        return f"{self.cards}, {self.combination}"
+
     def __lt__(self, other: "Play"):
         """Determine if self's Play < other's Play."""
         # All plays are better than ANY
@@ -214,6 +217,15 @@ class Play:
             return False
         # Normal same combination compare
         return self.cards[-1] < other.cards[-1]
+
+    def __eq__(self, other) -> bool:
+        return (
+            self.cards == other.cards and self.combination == other.combination
+        )
+
+    def __hash__(self) -> int:
+        x = sum(hash(c) for c in self.cards)
+        return x * self.combination.value
 
 
 class Deck:
