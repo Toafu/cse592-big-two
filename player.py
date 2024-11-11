@@ -26,6 +26,9 @@ class Player:
         Filter out all plays worse than last_play.
         """
         assert last_play.combination != CardCombination.INVALID
+        if last_play.combination == CardCombination.ANY:
+            # The ONLY time last_play is ANY is if it is empty.
+            assert len(last_play.cards) == 0
         all_combos: list[CardCombination] = [
             CardCombination.SINGLE,
             CardCombination.PAIR,
@@ -46,10 +49,11 @@ class Player:
             match c:
                 # TODO: Integrate FOUROFAKIND into all of these
                 case CardCombination.SINGLE:
+                    begin_bound = self._find_first_viable_rank_(last_play)
                     return [
                         (self.hand[i],)  # Single element tuple
                         for i in range(
-                            bisect_right(self.hand, last_play.cards[0]),
+                            begin_bound,
                             len(self.hand),
                         )
                     ]
@@ -64,7 +68,7 @@ class Player:
                     pairs = self._find_same_rank_combos_(
                         Play(
                             [],
-                            CardCombination.PAIR,
+                            CardCombination.ANY,
                         ),
                         2,
                     )
@@ -126,16 +130,19 @@ class Player:
                             i += 1
         return moves
 
+    def _find_first_viable_rank_(self, last_play: Play) -> int:
+        return (
+            bisect_right(self.hand, max(last_play.cards))
+            if len(last_play.cards)
+            else 0
+        )
+
     def _find_same_rank_combos_(self, last_play: Play, n: int) -> list[Moves]:
         assert (
             n == 2 or n == 3
         ), "This function only supports pairs and triples."
         moves: list[Moves] = []
-        i = (
-            bisect_right(self.hand, max(last_play.cards))
-            if len(last_play.cards)
-            else 0
-        )
+        i = self._find_first_viable_rank_(last_play)
         same_rank: list[Card] = []
         cur_rank = self.hand[i].rank
         while i <= len(self.hand):

@@ -304,7 +304,7 @@ def test_validate_full_houses():
     all_pairs = p._find_same_rank_combos_(
         Play(
             [],
-            CardCombination.PAIR,
+            CardCombination.ANY,
         ),
         2,
     )

@@ -160,6 +160,7 @@ class Play:
         """
         Initialize a Play object, standardizing the order of cards.
         Put Cards that need to be compared at the back of the Play.
+        Any: Do nothing since there's no cards.
         Pairs and Straights: only compare just the best card.
         Full Houses and Four of a Kinds: compare ranks of triple or quad.
         """
@@ -172,8 +173,8 @@ class Play:
             case CardCombination.FULLHOUSE | CardCombination.FOUROFAKIND:
                 freq = Counter([c.rank for c in self.cards])
                 self.cards = sorted(self.cards, key=lambda x: freq[x.rank])
-            case CardCombination.ANY:
-                assert False, "Combination cannot be declared as ANY"
+            case CardCombination.INVALID:
+                assert False, "Combination must be valid"
 
     def __lt__(self, other: "Play"):
         """Determine if self's Play < other's Play."""
