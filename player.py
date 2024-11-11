@@ -79,12 +79,20 @@ class Player:
                     ]
                 case CardCombination.STRAIGHT:
                     # Cursed dynamic sliding window
-                    best_card_in_play = max(last_play.cards)
-                    least_viable_rank = list(Card.ranks)[
-                        best_card_in_play.rank_index() - 4
-                    ]
-                    i = bisect_left(
-                        self.hand, Card("Diamonds", str(least_viable_rank))
+                    i = (
+                        bisect_left(
+                            self.hand,
+                            Card(
+                                "Diamonds",
+                                str(
+                                    list(Card.ranks)[
+                                        max(last_play.cards).rank_index() - 4
+                                    ]
+                                ),
+                            ),
+                        )
+                        if len(last_play.cards)
+                        else 0
                     )
                     straight_buffer: deque[Card] = deque()
                     straight_buffer.append(self.hand[i])
@@ -159,9 +167,7 @@ class Player:
         freq = Counter([c.rank for c in self.hand])
         quad_ranks = [k for k, v in freq.items() if v == 4]
         least_viable_rank_index: int = (
-            last_play.cards[-1].rank_index()
-            if last_play.combination == CardCombination.FOUROFAKIND
-            else -1
+            last_play.cards[-1].rank_index() if len(last_play.cards) else -1
         )
         for q_rank in quad_ranks:
             # Skip quads with lower ranks than last_play

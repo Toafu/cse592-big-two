@@ -477,3 +477,38 @@ def test_identify_combinations():
         Card("Diamonds", "2"),
     ]
     assert identify_combination(hand) == CardCombination.STRAIGHT
+
+
+def test_start_game():
+    hand = [
+        Card("Clubs", "3"),
+        Card("Hearts", "3"),
+        Card("Diamonds", "3"),
+        Card("Spades", "3"),
+        Card("Clubs", "4"),
+        Card("Diamonds", "5"),
+        Card("Clubs", "5"),
+        Card("Clubs", "J"),
+        Card("Spades", "J"),
+        Card("Hearts", "J"),
+        Card("Clubs", "Q"),
+        Card("Spades", "A"),
+        Card("Spades", "2"),
+    ]
+    """
+    13 singles = 13
+    6 pairs of threes + 1 pair of fives + 3 pairs jacks = 10
+    4 triples of threes and 1 triple of jacks = 5
+    9 four of a kinds with threes = 9
+    0 straights = 0
+    16 full houses with triple threes + 7 full houses with triple jacks = 23
+    """
+    num_plays = 13 + 10 + 5 + 9 + 23
+    p = Player("Toafu", hand)
+    assert len(p.find_plays(Play([], CardCombination.SINGLE))) == 13
+    assert len(p.find_plays(Play([], CardCombination.PAIR))) == 10
+    assert len(p.find_plays(Play([], CardCombination.TRIPLE))) == 5
+    assert len(p.find_plays(Play([], CardCombination.FOUROFAKIND))) == 9
+    assert len(p.find_plays(Play([], CardCombination.STRAIGHT))) == 0
+    assert len(p.find_plays(Play([], CardCombination.FULLHOUSE))) == 23
+    assert len(p.find_plays(Play())) == num_plays
