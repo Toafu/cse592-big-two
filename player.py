@@ -223,7 +223,7 @@ class Player:
         return results
 
     def make_play(self, last_play: Play) -> Play:
-        """Play a combination."""
+        """Play a combination. Assumes there are choices to play."""
         chosen_play: Play = random.choice(self.find_plays(last_play))
         for c in chosen_play.cards:
             self.hand.remove(c)
@@ -265,9 +265,7 @@ class HumanPlayer(Player):
                 play = Play(selected_cards, combination)
 
                 # Check if the play is valid against the last play
-                if last_play.combination != CardCombination.ANY and not (
-                    last_play < play
-                ):
+                if not (last_play < play):
                     print(
                         "Your play is not better than the last play. Please enter a valid play."
                     )

@@ -36,9 +36,9 @@ class BigTwoGame:
         )
 
     def play_round(self):
-        # to check if all other players have passed their turn
+        # Check if all other players have passed their turn
+        self.last_play = Play()
         while not self.check_other_passes():
-            self.last_play = Play()
             player = self.players[self.current_player_index]
             print(f"\n{player.name}'s turn")
             print("Current Combination:", self.last_play.combination)

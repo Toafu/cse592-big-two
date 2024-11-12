@@ -665,3 +665,12 @@ def test_aggressive_player():
     )
     for card in chosen_play.cards:
         assert card not in p.hand
+
+
+def test_no_options():
+    """make_play should not be called when forced to pa"""
+    hand = [Card("Clubs", "J")]
+
+    p = Player("Almost", hand)
+    last_play = Play([Card("Spades", "K")], CardCombination.SINGLE)
+    assert len(p.find_plays(last_play)) == 0
