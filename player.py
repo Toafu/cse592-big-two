@@ -231,57 +231,45 @@ class Player:
 
 
 class HumanPlayer(Player):
-    def find_plays(
-        self, last_play: Play, current_combination=CardCombination.ANY
-    ):
-        print(
-            f"Your hand: {[f'{i}: {str(card)}' for i, card in enumerate(self.hand)]}"
-        )
-        print("Last play:", last_play if last_play else "None")
-        # to print last play
-        # if last_play:
-        #     card_strings = [str(card) for card in last_play.cards]
-        #     print("Last Play:", ", ".join(card_strings))
-        #     lastplay = Play(last_play, current_combination)
-        # else:
-        #     print("Last Play: None")
+    def make_play(self, last_play: Play) -> Play:
+        """Allow a human player to input a play manually."""
+        print(f"Your hand: {self.hand}")
+        print(f"Last play: {last_play}")
 
         while True:
-            play_input = input(
-                "Enter indices of cards to play (e.g., '0 2 4' for a combination) or enter -1 to pass turn: "
-            )
             try:
-                indices = list(map(int, play_input.split()))
+                # Prompt the user to input their play
+                card_indices = input("Enter the indices of the cards you want to play, separated by spaces: ")
+                indices = list(map(int, card_indices.split()))
+                
+                # Validate indices
+                if any(i < 0 or i >= len(self.hand) for i in indices):
+                    print("Invalid indices. Please enter valid indices from your hand.")
+                    continue
+
+                # Create the play from the selected cards
                 selected_cards = [self.hand[i] for i in indices]
+                combination = identify_combination(selected_cards)
 
-                # check for whether the player passed
-                if len(indices) == 1 and indices[0] == -1:
-                    return []
+                if combination == CardCombination.INVALID:
+                    print("Invalid combination. Please enter a valid play.")
+                    continue
 
-                # checking for whether the card that is played is of the current combination and whether is it valid combination and whether it is gre
-                if is_valid_combination(selected_cards) and (
-                    identify_combination(selected_cards) == current_combination
-                ):
-                    # check whether the selected cards are greater than the last play
-                    # create a play here
-                    selected_play = Play(selected_cards, current_combination)
-                    # if last play is not None
-                    if last_play.cards:
-                        if last_play < selected_play:
-                            for card in selected_cards:
-                                self.hand.remove(card)
-                            return [tuple(selected_cards)]
-                    # if lastplay is none
-                    else:
-                        for card in selected_cards:
-                            self.hand.remove(card)
-                        return [tuple(selected_cards)]
-                else:
-                    print(
-                        "Invalid combination or play not higher than last play."
-                    )
-            except (ValueError, IndexError):
-                print("Invalid input. Try again.")
+                play = Play(selected_cards, combination)
+
+                # Check if the play is valid against the last play
+                if last_play.combination != CardCombination.ANY and not (last_play < play):
+                    print("Your play is not better than the last play. Please enter a valid play.")
+                    continue
+
+                # Remove the played cards from the hand
+                for card in selected_cards:
+                    self.hand.remove(card)
+
+                return play
+
+            except ValueError:
+                print("Invalid input. Please enter numbers separated by spaces.")
 
 
 class AggressivePlayer(Player):
