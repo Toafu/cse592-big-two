@@ -609,3 +609,26 @@ def test_invalid_combos():
     assert not pair_twos < single_ten
     assert not straight_six_ten < single_ten
     assert not single_ten < straight_six_ten
+
+
+def test_make_play():
+    hand = [
+        Card("Spades", "3"),
+        Card("Hearts", "4"),
+        Card("Spades", "6"),
+        Card("Diamonds", "7"),
+        Card("Spades", "7"),
+        Card("Diamonds", "8"),
+        Card("Spades", "9"),
+        Card("Clubs", "10"),
+        Card("Spades", "10"),
+        Card("Diamonds", "3"),
+        Card("Diamonds", "J"),
+        Card("Clubs", "2"),
+        Card("Spades", "A"),
+    ]
+
+    p = Player("Rando", hand)
+    chosen_play = p.make_play(Play())
+    for c in chosen_play.cards:
+        assert(c not in p.hand)

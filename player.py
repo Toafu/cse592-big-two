@@ -224,7 +224,10 @@ class Player:
 
     def make_play(self, last_play: Play) -> Play:
         """Play a combination."""
-        return random.choice(self.find_plays(last_play))
+        chosen_play: Play = random.choice(self.find_plays(last_play))
+        for c in chosen_play.cards:
+            self.hand.remove(c)
+        return chosen_play
 
     def has_cards(self):
         return len(self.hand) > 0
@@ -241,7 +244,7 @@ class HumanPlayer(Player):
                 # Prompt the user to input their play
                 card_indices = input("Enter the indices of the cards you want to play, separated by spaces: ")
                 indices = list(map(int, card_indices.split()))
-                
+
                 # Validate indices
                 if any(i < 0 or i >= len(self.hand) for i in indices):
                     print("Invalid indices. Please enter valid indices from your hand.")
