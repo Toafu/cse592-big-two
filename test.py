@@ -631,4 +631,37 @@ def test_make_play():
     p = Player("Rando", hand)
     chosen_play = p.make_play(Play())
     for c in chosen_play.cards:
-        assert(c not in p.hand)
+        assert c not in p.hand
+
+
+def test_aggressive_player():
+    hand = [
+        Card("Clubs", "3"),
+        Card("Hearts", "3"),
+        Card("Diamonds", "3"),
+        Card("Spades", "3"),
+        Card("Clubs", "4"),
+        Card("Diamonds", "5"),
+        Card("Clubs", "5"),
+        Card("Clubs", "J"),
+        Card("Spades", "J"),
+        Card("Hearts", "J"),
+        Card("Clubs", "Q"),
+        Card("Spades", "A"),
+        Card("Spades", "2"),
+    ]
+
+    p = AggressivePlayer("Aggro", hand)
+    chosen_play = p.make_play(Play())
+    assert chosen_play == Play(
+        [
+            Card("Clubs", "3"),
+            Card("Hearts", "3"),
+            Card("Diamonds", "3"),
+            Card("Spades", "3"),
+            Card("Spades", "2"),
+        ],
+        CardCombination.FOUROFAKIND,
+    )
+    for card in chosen_play.cards:
+        assert card not in p.hand

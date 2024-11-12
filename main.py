@@ -38,8 +38,6 @@ class BigTwoGame:
     def play_round(self):
         # to check if all other players have passed their turn
         while not self.check_other_passes():
-            print("All other players have passed ")
-            print("Now the player can decide which combination to play")
             self.last_play = Play()
             player = self.players[self.current_player_index]
             print(f"\n{player.name}'s turn")
@@ -48,8 +46,8 @@ class BigTwoGame:
 
             if plays:
                 print(f"{player.name} plays: {plays}")
-                # TODO: Make sure cards get removed in make_play
                 self.last_play = player.make_play(self.last_play)
+                self.passes[self.current_player_index] = False
             else:
                 print(f"{player.name} passes")
                 self.passes[self.current_player_index] = True

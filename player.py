@@ -242,12 +242,16 @@ class HumanPlayer(Player):
         while True:
             try:
                 # Prompt the user to input their play
-                card_indices = input("Enter the indices of the cards you want to play, separated by spaces: ")
+                card_indices = input(
+                    "Enter the indices of the cards you want to play, separated by spaces: "
+                )
                 indices = list(map(int, card_indices.split()))
 
                 # Validate indices
                 if any(i < 0 or i >= len(self.hand) for i in indices):
-                    print("Invalid indices. Please enter valid indices from your hand.")
+                    print(
+                        "Invalid indices. Please enter valid indices from your hand."
+                    )
                     continue
 
                 # Create the play from the selected cards
@@ -261,8 +265,12 @@ class HumanPlayer(Player):
                 play = Play(selected_cards, combination)
 
                 # Check if the play is valid against the last play
-                if last_play.combination != CardCombination.ANY and not (last_play < play):
-                    print("Your play is not better than the last play. Please enter a valid play.")
+                if last_play.combination != CardCombination.ANY and not (
+                    last_play < play
+                ):
+                    print(
+                        "Your play is not better than the last play. Please enter a valid play."
+                    )
                     continue
 
                 # Remove the played cards from the hand
@@ -272,8 +280,15 @@ class HumanPlayer(Player):
                 return play
 
             except ValueError:
-                print("Invalid input. Please enter numbers separated by spaces.")
+                print(
+                    "Invalid input. Please enter numbers separated by spaces."
+                )
 
 
 class AggressivePlayer(Player):
-    pass
+    def make_play(self, last_play: Play) -> Play:
+        """Play the most aggressive combination."""
+        chosen_play: Play = self.find_plays(last_play)[-1]
+        for c in chosen_play.cards:
+            self.hand.remove(c)
+        return chosen_play

@@ -168,8 +168,9 @@ class Play:
     ):
         """
         Initialize a Play object, standardizing the order of cards.
+        The relevant portion of each hand is sorted.
+
         Put Cards that need to be compared at the back of the Play.
-        Any: Do nothing since there's no cards.
         Pairs and Straights: only compare just the best card.
         Full Houses and Four of a Kinds: compare ranks of triple or quad.
         """
@@ -181,7 +182,14 @@ class Play:
                 self.cards = sorted(self.cards)
             case CardCombination.FULLHOUSE | CardCombination.FOUROFAKIND:
                 freq = Counter([c.rank for c in self.cards])
+                # First sort the cards by frequency
                 self.cards = sorted(self.cards, key=lambda x: freq[x.rank])
+                # Then standardize each section
+                if self.combination == CardCombination.FOUROFAKIND:
+                    self.cards[1:] = sorted(self.cards[1:])
+                else:
+                    self.cards[0:2] = sorted(self.cards[0:2])
+                    self.cards[2:] = sorted(self.cards[2:])
             case CardCombination.INVALID:
                 assert False, "Combination must be valid"
 
