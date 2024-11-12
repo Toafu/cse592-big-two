@@ -668,7 +668,7 @@ def test_aggressive_player():
 
 
 def test_no_options():
-    """make_play should not be called when forced to pa"""
+    """make_play should not be called when forced to pass."""
     hand = [Card("Clubs", "J")]
 
     p = Player("Almost", hand)
