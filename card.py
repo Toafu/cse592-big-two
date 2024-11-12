@@ -75,6 +75,9 @@ class CardCombination(Enum):
     STRAIGHT = 5
     FOUROFAKIND = 6
 
+    def __str__(self) -> str:
+        return self.name
+
     def __lt__(self, other: "CardCombination"):
         return self.value < other.value
 
@@ -194,7 +197,7 @@ class Play:
                 assert False, "Combination must be valid"
 
     def __repr__(self):
-        return f"{self.cards}, {self.combination}"
+        return f"{self.cards} → {self.combination}"
 
     def __lt__(self, other: "Play"):
         """Determine if self's Play < other's Play."""
