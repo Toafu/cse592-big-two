@@ -74,6 +74,7 @@ class CardCombination(Enum):
     FULLHOUSE = 4
     STRAIGHT = 5
     FOUROFAKIND = 6
+    PASS = 7
 
     def __str__(self) -> str:
         return self.name

@@ -1,5 +1,4 @@
-from abc import abstractmethod
-from bisect import bisect, bisect_left, bisect_right
+from bisect import bisect_left, bisect_right
 from collections import deque
 import itertools
 import typing
@@ -227,6 +226,8 @@ class Player:
     def make_play(self, last_play: Play, start=False) -> Play:
         """Play a combination. Assumes there are choices to play."""
         plays: list[Play] = self.find_plays(last_play)
+        if not plays:
+            return Play([], CardCombination.PASS)
         if start:
             plays = [p for p in plays if Card("Diamonds", "3") in p.cards]
         chosen_play: Play = random.choice(plays)
@@ -239,23 +240,34 @@ class Player:
 
 
 class HumanPlayer(Player):
-    def make_play(self, last_play: Play) -> Play:
+    def make_play(self, last_play: Play, start=False) -> Play:
         """Allow a human player to input a play manually."""
-        print(f"Your hand: {self.hand}")
+        print(f"Your hand:")
+        for i, card in enumerate(self.hand):
+            print(f"\t{i}: {card}")
         print(f"Last play: {last_play}")
 
         while True:
             try:
                 # Prompt the user to input their play
                 card_indices = input(
-                    "Enter the indices of the cards you want to play, separated by spaces: "
+                    "Enter the indices of the cards you want to play, separated by spaces or 'PASS' to pass: "
                 )
+                # This will throw a ValueError if it cannot split
                 indices = list(map(int, card_indices.split()))
 
                 # Validate indices
                 if any(i < 0 or i >= len(self.hand) for i in indices):
                     print(
                         "Invalid indices. Please enter valid indices from your hand."
+                    )
+                    continue
+
+                if start and not any(
+                    self.hand[i] == Card("Diamonds", "3") for i in indices
+                ):
+                    print(
+                        "Game starting combination must include 3 of Diamonds"
                     )
                     continue
 
@@ -270,7 +282,7 @@ class HumanPlayer(Player):
                 play = Play(selected_cards, combination)
 
                 # Check if the play is valid against the last play
-                if not (last_play < play):
+                if play < last_play:
                     print(
                         "Your play is not better than the last play. Please enter a valid play."
                     )
@@ -283,8 +295,10 @@ class HumanPlayer(Player):
                 return play
 
             except ValueError:
+                if card_indices.lower() == "pass":
+                    return Play([], CardCombination.PASS)
                 print(
-                    "Invalid input. Please enter numbers separated by spaces."
+                    "Invalid input. Please enter numbers separated by spaces or 'PASS'."
                 )
 
 
@@ -292,6 +306,8 @@ class AggressivePlayer(Player):
     def make_play(self, last_play: Play, start=False) -> Play:
         """Play the most aggressive combination."""
         plays: list[Play] = self.find_plays(last_play)
+        if not plays:
+            return Play([], CardCombination.PASS)
         if start:
             plays = [p for p in plays if Card("Diamonds", "3") in p.cards]
         chosen_play: Play = plays[-1]
