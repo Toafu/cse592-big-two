@@ -674,3 +674,59 @@ def test_no_options():
     p = Player("Almost", hand)
     last_play = Play([Card("Spades", "K")], CardCombination.SINGLE)
     assert len(p.find_plays(last_play)) == 0
+
+
+def test_small_hand():
+    hand = [Card("Clubs", "8")]
+
+    p = Player("", hand)
+
+    last_play: Play = Play([Card("Clubs", "9")], CardCombination.SINGLE)
+    assert len(p.find_plays(last_play)) == 0
+
+    last_play: Play = Play(
+        [Card("Clubs", "9"), Card("Hearts", "9")], CardCombination.PAIR
+    )
+    assert len(p.find_plays(last_play)) == 0
+
+    last_play: Play = Play(
+        [Card("Clubs", "9"), Card("Hearts", "9"), Card("Spades", "9")],
+        CardCombination.TRIPLE,
+    )
+    assert len(p.find_plays(last_play)) == 0
+
+    last_play: Play = Play(
+        [
+            Card("Clubs", "9"),
+            Card("Hearts", "9"),
+            Card("Spades", "10"),
+            Card("Clubs", "10"),
+            Card("Hearts", "10"),
+        ],
+        CardCombination.FULLHOUSE,
+    )
+    assert len(p.find_plays(last_play)) == 0
+
+    last_play: Play = Play(
+        [
+            Card("Clubs", "5"),
+            Card("Hearts", "6"),
+            Card("Hearts", "7"),
+            Card("Hearts", "8"),
+            Card("Hearts", "9"),
+        ],
+        CardCombination.STRAIGHT,
+    )
+    assert len(p.find_plays(last_play)) == 0
+
+    last_play: Play = Play(
+        [
+            Card("Clubs", "9"),
+            Card("Hearts", "9"),
+            Card("Spades", "9"),
+            Card("Diamonds", "9"),
+            Card("Clubs", "3"),
+        ],
+        CardCombination.FOUROFAKIND,
+    )
+    assert len(p.find_plays(last_play)) == 0

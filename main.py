@@ -29,6 +29,7 @@ class BigTwoGame:
                 break
         self.last_play: Play = Play()
         self.current_combination = CardCombination.ANY
+        self.turns: int = 0
 
     def next_player(self):
         self.current_player_index = (self.current_player_index + 1) % len(
@@ -43,14 +44,19 @@ class BigTwoGame:
         while not self.check_other_passes() and not self.is_game_over():
             player = self.players[self.current_player_index]
             print(f"{player.name}'s turn")
-            print("Current Combination:", self.last_play.combination)
             plays: list[Play] = player.find_plays(self.last_play)
+            if not isinstance(player, HumanPlayer):
+                print(f"{player.name} hand: {player.hand}")
+                if self.turns == 0:
+                    plays = [
+                        p for p in plays if Card("Diamonds", "3") in p.cards
+                    ]
+                print(f"{player.name} options: {plays}")
 
             if plays:
-                if not isinstance(player, HumanPlayer):
-                    print(f"{player.name} hand: {player.hand}")
-                    print(f"{player.name} options: {plays}")
-                self.last_play = player.make_play(self.last_play)
+                self.last_play = player.make_play(
+                    self.last_play, self.turns == 0
+                )
                 print(f"{player.name} plays {self.last_play}")
                 self.passes[self.current_player_index] = False
             else:
@@ -58,6 +64,8 @@ class BigTwoGame:
                 self.passes[self.current_player_index] = True
 
             self.next_player()
+            self.turns += 1
+            print("")
         print("Round over\n")
 
     # function to check if all the other players have passed their turn

@@ -64,8 +64,6 @@ class Player:
                     moves += self._find_same_rank_combos_(last_play, 2)
                 case CardCombination.TRIPLE:
                     moves += self._find_same_rank_combos_(last_play, 3)
-                case CardCombination.FOUROFAKIND:
-                    moves += self._find_four_of_a_kinds_(last_play)
                 case CardCombination.FULLHOUSE:
                     # Only the triple matters, so any pair should be allowed
                     pairs = self._find_same_rank_combos_(Play(), 2)
@@ -80,6 +78,8 @@ class Player:
                     ]
                 case CardCombination.STRAIGHT:
                     # Cursed dynamic sliding window
+                    if len(self.hand) < 5:
+                        continue
                     i = (
                         bisect_left(
                             self.hand,
@@ -129,6 +129,8 @@ class Player:
                                 straight_buffer.clear()
                                 straight_buffer.append(self.hand[i])
                             i += 1
+                case CardCombination.FOUROFAKIND:
+                    moves += self._find_four_of_a_kinds_(last_play)
         return moves
 
     def _find_first_viable_rank_(self, last_play: Play) -> int:
@@ -222,9 +224,12 @@ class Player:
         backtrack([], cards)
         return results
 
-    def make_play(self, last_play: Play) -> Play:
+    def make_play(self, last_play: Play, start=False) -> Play:
         """Play a combination. Assumes there are choices to play."""
-        chosen_play: Play = random.choice(self.find_plays(last_play))
+        plays: list[Play] = self.find_plays(last_play)
+        if start:
+            plays = [p for p in plays if Card("Diamonds", "3") in p.cards]
+        chosen_play: Play = random.choice(plays)
         for c in chosen_play.cards:
             self.hand.remove(c)
         return chosen_play
@@ -284,9 +289,12 @@ class HumanPlayer(Player):
 
 
 class AggressivePlayer(Player):
-    def make_play(self, last_play: Play) -> Play:
+    def make_play(self, last_play: Play, start=False) -> Play:
         """Play the most aggressive combination."""
-        chosen_play: Play = self.find_plays(last_play)[-1]
+        plays: list[Play] = self.find_plays(last_play)
+        if start:
+            plays = [p for p in plays if Card("Diamonds", "3") in p.cards]
+        chosen_play: Play = plays[-1]
         for c in chosen_play.cards:
             self.hand.remove(c)
         return chosen_play
