@@ -1,8 +1,7 @@
 # Reinforcement Learning
 
-## State (WIP)
-- Count number of each combination as state (e.g. 10 singles, 4 pairs, 2 straights)
-- Agent's hand and Play history 
+## State
+- Agent's hand, last Play, and Play history?
 - Every round as a state, with agents hand and the cards that are being played by other agents
 
 ## Actions
@@ -20,6 +19,8 @@
 ## Baselines
 - Have each Agent (Random, Eliminate-Weakest, Aggressive) play against all Random Agents and record win rates
 
-# THINGS TO ASK
-- How to represent state
-- Any good reinforcement learning frameworks we can use with a game made from scratch
+# It's okay to simplify the game
+- We have to represent state as the hand
+- If we are the first, we can be novel
+- Bring it down to two players and reduce the deck size
+- Look up on our own RL stuff

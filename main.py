@@ -6,17 +6,17 @@ class BigTwoGame:
     def __init__(self):
         self.deck = Deck()
         hands = self.deck.deal(4)
-        # self.players: list[Player] = [
-        #     AggressivePlayer("Aggro Computer", hands[0]),
-        #     Player("Computer 1", hands[1]),
-        #     Player("Computer 2", hands[2]),
-        #     Player("Computer 3", hands[3]),
-        # ]
-        hands = self.deck.deal(2)
         self.players: list[Player] = [
-            HumanPlayer("Player1", hands[0]),
-            HumanPlayer("Player2", hands[1]),
+            AggressivePlayer("Aggro Computer", hands[0]),
+            Player("Computer 1", hands[1]),
+            Player("Computer 2", hands[2]),
+            Player("Computer 3", hands[3]),
         ]
+        # hands = self.deck.deal(2)
+        # self.players: list[Player] = [
+        #     HumanPlayer("Player1", hands[0]),
+        #     HumanPlayer("Player2", hands[1]),
+        # ]
         # variable to track passes
         self.passes = [False] * len(self.players)
 
