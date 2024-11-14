@@ -248,6 +248,7 @@ class HumanPlayer(Player):
         print(f"Last play: {last_play}")
 
         while True:
+            card_indices: str = ""
             try:
                 # Prompt the user to input their play
                 card_indices = input(
@@ -311,6 +312,46 @@ class AggressivePlayer(Player):
         if start:
             plays = [p for p in plays if Card("Diamonds", "3") in p.cards]
         chosen_play: Play = plays[-1]
+        for c in chosen_play.cards:
+            self.hand.remove(c)
+        return chosen_play
+
+
+class PlayItSafePlayer(Player):
+    def make_play(self, last_play: Play, start=False) -> Play:
+        """Play the combination that gets rid of the most low cards."""
+        plays: list[Play] = self.find_plays(last_play)
+        chosen_play: Play = Play()
+        if not plays:
+            return Play([], CardCombination.PASS)
+        # If we can't control the start, play your weakest
+        if not last_play.combination == CardCombination.ANY:
+            chosen_play = plays[0]
+        if start:
+            plays = [p for p in plays if Card("Diamonds", "3") in p.cards]
+
+        lowest_rank: str = plays[0].cards[0].rank
+        chosen_play = plays[0]
+        lowest_rank_freq: int = 0
+        # Find which Play gets rid of the most cards with this rank
+        # Only really relevant when you start a round
+        for p in plays:
+            lowest_rank_count = Counter([c.rank for c in p.cards])[lowest_rank]
+            # Avoid starting a round with four of a kind
+            if p.combination == CardCombination.FOUROFAKIND:
+                break
+            # Prioritize 2 or 3 of a kind
+            if lowest_rank_count > lowest_rank_freq:
+                lowest_rank_freq = lowest_rank_count
+                chosen_play = p
+            # Take the weakest full house over a triple
+            elif lowest_rank_count == lowest_rank_freq and len(p.cards) > len(
+                chosen_play.cards
+            ):
+                # Don't play a full house any card is "good"
+                if any(c.rank_index() > Card.ranks["9"] for c in p.cards):
+                    continue
+                chosen_play = p
         for c in chosen_play.cards:
             self.hand.remove(c)
         return chosen_play

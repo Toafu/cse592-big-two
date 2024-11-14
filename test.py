@@ -667,6 +667,66 @@ def test_aggressive_player():
         assert card not in p.hand
 
 
+def test_playitsafe_player():
+    hand = [
+        Card("Clubs", "3"),
+        Card("Hearts", "3"),
+        Card("Spades", "3"),
+        Card("Clubs", "4"),
+        Card("Diamonds", "5"),
+        Card("Clubs", "5"),
+        Card("Clubs", "J"),
+        Card("Spades", "J"),
+        Card("Hearts", "J"),
+        Card("Clubs", "Q"),
+        Card("Spades", "6"),
+        Card("Spades", "7"),
+    ]
+
+    p = PlayItSafePlayer("Safety", hand)
+    chosen_play = p.make_play(Play())
+    start_play = Play(
+        [
+            Card("Clubs", "3"),
+            Card("Hearts", "3"),
+            Card("Spades", "3"),
+            Card("Diamonds", "5"),
+            Card("Clubs", "5"),
+        ],
+        CardCombination.FULLHOUSE,
+    )
+
+    assert chosen_play == start_play
+
+    p.hand = hand
+    chosen_play = p.make_play(
+        Play([Card("Spades", "3")], CardCombination.SINGLE)
+    )
+    assert chosen_play == Play([Card("Clubs", "4")], CardCombination.SINGLE)
+
+    hand = [
+        Card("Clubs", "3"),
+        Card("Hearts", "3"),
+        Card("Spades", "3"),
+        Card("Clubs", "4"),
+        Card("Diamonds", "A"),
+        Card("Clubs", "A"),
+        Card("Clubs", "J"),
+        Card("Spades", "J"),
+        Card("Hearts", "J"),
+        Card("Clubs", "Q"),
+        Card("Spades", "6"),
+        Card("Spades", "7"),
+    ]
+
+    p.hand = hand
+    chosen_play = p.make_play(Play())
+    assert chosen_play == Play(
+        [Card("Clubs", "3"), Card("Hearts", "3"), Card("Spades", "3")],
+        CardCombination.TRIPLE,
+    )
+
+
 def test_no_options():
     """make_play should not be called when forced to pass."""
     hand = [Card("Clubs", "J")]

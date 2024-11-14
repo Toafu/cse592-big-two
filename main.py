@@ -1,4 +1,4 @@
-from player import AggressivePlayer, HumanPlayer, Player
+from player import AggressivePlayer, HumanPlayer, PlayItSafePlayer, Player
 from card import Card, CardCombination, Deck, Play
 
 
@@ -7,10 +7,10 @@ class BigTwoGame:
         self.deck = Deck()
         hands = self.deck.deal(4)
         self.players: list[Player] = [
-            AggressivePlayer("Aggro Computer", hands[0]),
-            Player("Computer 1", hands[1]),
-            Player("Computer 2", hands[2]),
-            Player("Computer 3", hands[3]),
+            AggressivePlayer("AggCOM", hands[0]),
+            PlayItSafePlayer("SafeCOM", hands[1]),
+            Player("COM1", hands[2]),
+            Player("COM2", hands[3]),
         ]
         # hands = self.deck.deal(2)
         # self.players: list[Player] = [
@@ -88,9 +88,23 @@ class BigTwoGame:
         for player in self.players:
             if not player.has_cards():
                 print(f"{player.name} has won the game!")
-                break
+                return player.name
+        assert False, "No winner after game ended"
 
 
 if __name__ == "__main__":
-    game = BigTwoGame()
-    game.start()
+    games_played: int = 0
+    aggro_won: int = 0
+    safe_won: int = 0
+    for i in range(10):
+        game = BigTwoGame()
+        winner: str = game.start()
+        match winner:
+            case "AggCOM":
+                aggro_won += 1
+            case "SafeCOM":
+                safe_won += 1
+        games_played += 1
+
+    print(f"Aggressive won {aggro_won}/{games_played} games")
+    print(f"Safe won {safe_won}/{games_played} games")
