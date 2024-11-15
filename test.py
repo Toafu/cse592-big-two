@@ -765,7 +765,7 @@ def test_playitsafe_player():
 
     assert chosen_play == start_play
 
-    p.hand = hand
+    p = PlayItSafePlayer("Safety", hand)
     chosen_play = p.make_play(
         Play([Card("Spades", "3")], CardCombination.SINGLE)
     )
@@ -786,11 +786,59 @@ def test_playitsafe_player():
         Card("Spades", "7"),
     ]
 
-    p.hand = hand
+    p = PlayItSafePlayer("Safety", hand)
     chosen_play = p.make_play(Play())
     assert chosen_play == Play(
         [Card("Clubs", "3"), Card("Hearts", "3"), Card("Spades", "3")],
         CardCombination.TRIPLE,
+    )
+
+    hand = [
+        Card("Clubs", "3"),
+        Card("Hearts", "4"),
+        Card("Spades", "5"),
+        Card("Clubs", "6"),
+        Card("Diamonds", "7"),
+        Card("Clubs", "A"),
+        Card("Clubs", "J"),
+        Card("Spades", "J"),
+        Card("Hearts", "J"),
+        Card("Clubs", "Q"),
+        Card("Spades", "6"),
+        Card("Spades", "7"),
+    ]
+
+    p = PlayItSafePlayer("Safety", hand)
+    chosen_play = p.make_play(Play())
+    assert chosen_play == Play(
+        [
+            Card("Clubs", "3"),
+            Card("Hearts", "4"),
+            Card("Spades", "5"),
+            Card("Clubs", "6"),
+            Card("Diamonds", "7"),
+        ],
+        CardCombination.STRAIGHT,
+    )
+    hand = [
+        Card("Clubs", "3"),
+        Card("Hearts", "4"),
+        Card("Spades", "5"),
+        Card("Clubs", "6"),
+        Card("Diamonds", "7"),
+        Card("Clubs", "A"),
+        Card("Clubs", "J"),
+        Card("Spades", "J"),
+        Card("Hearts", "J"),
+        Card("Clubs", "Q"),
+        Card("Spades", "3"),
+        Card("Spades", "7"),
+    ]
+
+    p = PlayItSafePlayer("Safety", hand)
+    chosen_play = p.make_play(Play())
+    assert chosen_play == Play(
+        [Card("Clubs", "3"), Card("Spades", "3")], CardCombination.PAIR
     )
 
 

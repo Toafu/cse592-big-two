@@ -115,25 +115,29 @@ class BigTwoGame:
 if __name__ == "__main__":
     if len(argv) > 1 and argv[1].lower() == "info":
         logging.basicConfig(level=logging.INFO)
-    games_played: int = 1000
+    games: int = 1000
+    random_won: int = 0
     aggro_won: int = 0
     safe_won: int = 0
-    for i in range(games_played):
+
+    for i in range(games):
         game = BigTwoGame(
             player_types=[PlayerType.Aggressive] + ([PlayerType.Random] * 3)
         )
         winner: str = game.start()
         if winner == "Aggressive0":
             aggro_won += 1
-    for i in range(games_played):
         game = BigTwoGame(
             player_types=[PlayerType.PlayItSafe] + ([PlayerType.Random] * 3)
         )
         winner: str = game.start()
         if winner == "PlayItSafe0":
             safe_won += 1
+        game = BigTwoGame(player_types=[PlayerType.Random] * 4)
+        winner: str = game.start()
+        if winner == "Random0":
+            random_won += 1
 
-    print(
-        f"Aggressive won {aggro_won}/{games_played} games against random agents"
-    )
-    print(f"Safe won {safe_won}/{games_played} games random agents")
+    print(f"Random won {random_won}/{games} games against random agents")
+    print(f"Aggressive won {aggro_won}/{games} games against random agents")
+    print(f"Safe won {safe_won}/{games} games random agents")
