@@ -1,22 +1,43 @@
-from player import AggressivePlayer, HumanPlayer, PlayItSafePlayer, Player
+from sys import argv
+from player import (
+    AggressivePlayer,
+    HumanPlayer,
+    PlayItSafePlayer,
+    Player,
+    PlayerType,
+)
 from card import Card, CardCombination, Deck, Play
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 
 class BigTwoGame:
-    def __init__(self):
+    def __init__(
+        self,
+        num_players: int = 4,
+        player_types: list[PlayerType] = [PlayerType.Random] * 4,
+    ):
+        assert num_players == len(player_types)
         self.deck = Deck()
-        hands = self.deck.deal(4)
-        self.players: list[Player] = [
-            AggressivePlayer("AggCOM", hands[0]),
-            PlayItSafePlayer("SafeCOM", hands[1]),
-            Player("COM1", hands[2]),
-            Player("COM2", hands[3]),
-        ]
-        # hands = self.deck.deal(2)
-        # self.players: list[Player] = [
-        #     HumanPlayer("Player1", hands[0]),
-        #     HumanPlayer("Player2", hands[1]),
-        # ]
+        hands = self.deck.deal(num_players)
+        self.players: list[Player] = []
+        for i in range(num_players):
+            match player_types[i]:
+                case PlayerType.Random:
+                    self.players.append(Player(f"Random{i}", hands[i]))
+                case PlayerType.Aggressive:
+                    self.players.append(
+                        AggressivePlayer(f"Aggressive{i}", hands[i])
+                    )
+                case PlayerType.PlayItSafe:
+                    self.players.append(
+                        PlayItSafePlayer(f"PlayItSafe{i}", hands[i])
+                    )
+                case PlayerType.RLAgent:
+                    # TODO: IMPLEMENT RLAGENT
+                    self.players.append(Player(f"Random{i}", hands[i]))
+
         # variable to track passes
         self.passes = [False] * len(self.players)
 
@@ -37,35 +58,34 @@ class BigTwoGame:
         )
 
     def play_round(self):
-        print("New round")
+        LOGGER.info("New round")
         # Check if all other players have passed their turn
         self.last_play = Play()
         self.passes = [False] * len(self.players)
         while not self.check_other_passes() and not self.is_game_over():
             player = self.players[self.current_player_index]
-            print(f"{player.name}'s turn")
+            LOGGER.info("%s's turn", player.name)
             if not isinstance(player, HumanPlayer):
-                print(f"{player.name} hand: {player.hand}")
+                LOGGER.info("%s hand: %s", player.name, player.hand)
                 plays: list[Play] = player.find_plays(self.last_play)
                 if self.turns == 0:
                     plays = [
                         p for p in plays if Card("Diamonds", "3") in p.cards
                     ]
-                print(f"{player.name} options: {plays}")
+                LOGGER.info("%s options: %s", player.name, plays)
 
             chosen_play = player.make_play(self.last_play, self.turns == 0)
             if not chosen_play.combination == CardCombination.PASS:
                 self.last_play = chosen_play
-                print(f"{player.name} plays {self.last_play}")
+                LOGGER.info("%s plays %s", player.name, self.last_play)
                 self.passes[self.current_player_index] = False
             else:
-                print(f"{player.name} passes")
+                LOGGER.info("%s passes", player.name)
                 self.passes[self.current_player_index] = True
 
             self.next_player()
             self.turns += 1
-            print("")
-        print("Round over\n")
+        LOGGER.info("Round over\n")
 
     # function to check if all the other players have passed their turn
     def check_other_passes(self):
@@ -79,33 +99,41 @@ class BigTwoGame:
         return any(not player.has_cards() for player in self.players)
 
     def start(self):
-        print("Starting Big Two Game!")
+        LOGGER.info("Starting Big Two Game!")
 
         while not self.is_game_over():
             self.play_round()
 
-        print("Game Over!")
+        LOGGER.info("Game Over!")
         for player in self.players:
             if not player.has_cards():
-                print(f"{player.name} has won the game!")
+                LOGGER.info("%s has won the game!", player.name)
                 return player.name
         assert False, "No winner after game ended"
 
 
 if __name__ == "__main__":
-    games_played: int = 0
+    if len(argv) > 1 and argv[1].lower() == "info":
+        logging.basicConfig(level=logging.INFO)
+    games_played: int = 1000
     aggro_won: int = 0
     safe_won: int = 0
-    while True:
-        # for i in range(1000):
-        game = BigTwoGame()
+    for i in range(games_played):
+        game = BigTwoGame(
+            player_types=[PlayerType.Aggressive] + ([PlayerType.Random] * 3)
+        )
         winner: str = game.start()
-        match winner:
-            case "AggCOM":
-                aggro_won += 1
-            case "SafeCOM":
-                safe_won += 1
-        games_played += 1
+        if winner == "Aggressive0":
+            aggro_won += 1
+    for i in range(games_played):
+        game = BigTwoGame(
+            player_types=[PlayerType.PlayItSafe] + ([PlayerType.Random] * 3)
+        )
+        winner: str = game.start()
+        if winner == "PlayItSafe0":
+            safe_won += 1
 
-    print(f"Aggressive won {aggro_won}/{games_played} games")
-    print(f"Safe won {safe_won}/{games_played} games")
+    print(
+        f"Aggressive won {aggro_won}/{games_played} games against random agents"
+    )
+    print(f"Safe won {safe_won}/{games_played} games random agents")

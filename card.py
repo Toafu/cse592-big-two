@@ -199,6 +199,9 @@ class Play:
     def __repr__(self):
         return f"{self.cards} → {self.combination}"
 
+    def __str__(self):
+        return f"{self.cards} → {self.combination}"
+
     def __lt__(self, other: "Play"):
         """Determine if self's Play < other's Play."""
         # All plays are better than ANY

@@ -357,3 +357,10 @@ class PlayItSafePlayer(Player):
         for c in chosen_play.cards:
             self.hand.remove(c)
         return chosen_play
+
+
+class PlayerType(Enum):
+    Random = 0
+    Aggressive = 1
+    PlayItSafe = 2
+    RLAgent = 3
