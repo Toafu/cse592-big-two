@@ -350,7 +350,7 @@ class PlayItSafePlayer(Player):
             elif lowest_rank_count == lowest_rank_freq and len(p.cards) > len(
                 chosen_play.cards
             ):
-                # Don't play a full house any card is "good"
+                # Don't play a full house if any card is "good"
                 if any(c.rank_index() > Card.ranks["9"] for c in p.cards):
                     continue
                 chosen_play = p

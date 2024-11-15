@@ -736,7 +736,7 @@ def test_aggressive_player():
 
 def test_playitsafe_player():
     hand = [
-        Card("Clubs", "3"),
+        Card("Diamonds", "3"),
         Card("Hearts", "3"),
         Card("Spades", "3"),
         Card("Clubs", "4"),
@@ -751,10 +751,10 @@ def test_playitsafe_player():
     ]
 
     p = PlayItSafePlayer("Safety", hand)
-    chosen_play = p.make_play(Play())
+    chosen_play = p.make_play(Play(), True)
     start_play = Play(
         [
-            Card("Clubs", "3"),
+            Card("Diamonds", "3"),
             Card("Hearts", "3"),
             Card("Spades", "3"),
             Card("Diamonds", "5"),
