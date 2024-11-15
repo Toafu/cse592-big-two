@@ -86,7 +86,6 @@ class CardCombination(Enum):
 Cards = typing.List[Card]
 
 
-# to represent the type of combination
 def __repr__(self):
     return self.name
 

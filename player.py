@@ -94,6 +94,8 @@ class Player:
                         if len(last_play.cards)
                         else 0
                     )
+                    if i == len(self.hand):
+                        continue
                     straight_buffer: deque[Card] = deque()
                     straight_buffer.append(self.hand[i])
                     i += 1

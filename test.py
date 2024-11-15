@@ -460,6 +460,73 @@ def test_validate_straights():
     assert available_plays == validation_set
 
 
+def test_validate_straights_special():
+    hand: list[Card] = [
+        Card("Diamonds", "3"),
+        Card("Diamonds", "4"),
+        Card("Diamonds", "5"),
+        Card("Diamonds", "6"),
+    ]
+
+    p = Player("p", hand)
+    assert len(p.find_plays(Play([], CardCombination.STRAIGHT))) == 0
+
+    hand: list[Card] = [
+        Card("Diamonds", "3"),
+        Card("Diamonds", "3"),
+        Card("Diamonds", "5"),
+        Card("Diamonds", "6"),
+        Card("Diamonds", "7"),
+        Card("Diamonds", "8"),
+    ]
+
+    small_straight: Play = Play(
+        [
+            Card("Clubs", "3"),
+            Card("Clubs", "4"),
+            Card("Clubs", "5"),
+            Card("Clubs", "6"),
+            Card("Clubs", "7"),
+        ],
+        CardCombination.STRAIGHT,
+    )
+
+    p.hand = hand
+    assert len(p.find_plays(small_straight)) == 0
+
+    p.hand = [
+        Card("Spades", "A"),
+        Card("Clubs", "2"),
+        Card("Diamonds", "2"),
+        Card("Hearts", "2"),
+        Card("Spades", "2"),
+    ]
+    assert len(p.find_plays(small_straight)) == 1
+
+    p.hand = [
+        Card("Hearts", "3"),
+        Card("Spades", "3"),
+        Card("Hearts", "5"),
+        Card("Spades", "5"),
+        Card("Spades", "8"),
+        Card("Clubs", "9"),
+        Card("Spades", "9"),
+    ]
+
+    last_play = Play(
+        [
+            Card("Hearts", "10"),
+            Card("Clubs", "J"),
+            Card("Diamonds", "Q"),
+            Card("Spades", "K"),
+            Card("Hearts", "A"),
+        ],
+        CardCombination.STRAIGHT,
+    )
+
+    assert len(p.find_plays(last_play)) == 0
+
+
 def test_construct_plays():
     pair = [Card("Hearts", "2"), Card("Clubs", "2")]
     assert is_pair(pair)

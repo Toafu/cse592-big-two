@@ -45,12 +45,12 @@ class BigTwoGame:
             player = self.players[self.current_player_index]
             print(f"{player.name}'s turn")
             if not isinstance(player, HumanPlayer):
+                print(f"{player.name} hand: {player.hand}")
                 plays: list[Play] = player.find_plays(self.last_play)
                 if self.turns == 0:
                     plays = [
                         p for p in plays if Card("Diamonds", "3") in p.cards
                     ]
-                print(f"{player.name} hand: {player.hand}")
                 print(f"{player.name} options: {plays}")
 
             chosen_play = player.make_play(self.last_play, self.turns == 0)
@@ -96,7 +96,8 @@ if __name__ == "__main__":
     games_played: int = 0
     aggro_won: int = 0
     safe_won: int = 0
-    for i in range(10):
+    while True:
+        # for i in range(1000):
         game = BigTwoGame()
         winner: str = game.start()
         match winner:
