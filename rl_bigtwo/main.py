@@ -1,6 +1,5 @@
-from rlcard.envs import (
-	Env
-)
+from rlcard.envs import Env
+
 
 class BigTwo(Env):
-	pass
+    pass
