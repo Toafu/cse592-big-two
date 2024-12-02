@@ -459,6 +459,18 @@ def test_validate_straights():
     validation_set = set(validation_list)
     assert available_plays == validation_set
 
+    p.hand = [
+        Card("Spades", "J"),
+        Card("Spades", "Q"),
+        Card("Diamonds", "K"),
+        Card("Spades", "A"),
+        Card("Spades", "2"),
+        Card("Diamonds", "2"),
+        Card("Clubs", "2"),
+    ]
+
+    assert len(p.find_plays(last_play)) == 3
+
 
 def test_validate_straights_special():
     hand: list[Card] = [
@@ -905,3 +917,31 @@ def test_small_hand():
         CardCombination.FOUROFAKIND,
     )
     assert len(p.find_plays(last_play)) == 0
+
+
+def test_simplify_play():
+    p: Play = Play(
+        [
+            Card("Clubs", "3"),
+            Card("Hearts", "3"),
+            Card("Hearts", "10"),
+            Card("Hearts", "3"),
+            Card("Hearts", "10"),
+        ],
+        CardCombination.FULLHOUSE,
+    )
+
+    assert p.simplify_play() == "TT333"
+
+    p = Play(
+        [
+            Card("Clubs", "3"),
+            Card("Hearts", "7"),
+            Card("Hearts", "6"),
+            Card("Hearts", "4"),
+            Card("Hearts", "5"),
+        ],
+        CardCombination.STRAIGHT,
+    )
+
+    assert p.simplify_play() == "34567"

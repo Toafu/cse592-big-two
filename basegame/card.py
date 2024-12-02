@@ -196,6 +196,15 @@ class Play:
             case CardCombination.INVALID:
                 assert False, "Combination must be valid"
 
+    def simplify_play(self) -> str:
+        s = ""
+        for c in self.cards:
+            if c.rank == "10":
+                s += "T"
+            else:
+                s += c.rank
+        return s
+
     def __repr__(self):
         return f"{self.cards} → {self.combination}"
 

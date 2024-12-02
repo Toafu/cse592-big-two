@@ -4,6 +4,7 @@ import itertools
 import typing
 import random
 from card import *
+import gymnasium as gym
 
 
 Cards = typing.List[Card]
@@ -130,6 +131,12 @@ class Player:
                                 straight_buffer.clear()
                                 straight_buffer.append(self.hand[i])
                             i += 1
+                    possible_plays = self._get_straight_combinations_(
+                        list(straight_buffer)
+                    )
+                    for p in possible_plays:
+                        if last_play < p:
+                            moves.append(p)
                 case CardCombination.FOUROFAKIND:
                     moves += self._find_four_of_a_kinds_(last_play)
         return moves
@@ -208,7 +215,7 @@ class Player:
 
     def _get_straight_combinations_(self, cards: Cards) -> list[Play]:
         def backtrack(hand: Cards, remaining: Cards):
-            if len(hand) == 5:
+            if len(hand) == 5 and is_straight(hand):
                 results.append(Play(hand, CardCombination.STRAIGHT))
                 return
             if not remaining:
@@ -357,6 +364,10 @@ class PlayItSafePlayer(Player):
         for c in chosen_play.cards:
             self.hand.remove(c)
         return chosen_play
+
+
+class RLAgent(Player):
+    pass
 
 
 class PlayerType(Enum):
