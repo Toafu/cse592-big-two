@@ -60,6 +60,9 @@ class Card:
 
     def suit_index(self):
         return Card.suits[self.suit]
+    
+    def card_index(self) -> int:
+        return 4 * Card.ranks[self.rank] + Card.suits[self.suit]
 
 
 @total_ordering

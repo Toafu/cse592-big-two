@@ -19,7 +19,7 @@ class Player:
 
     def find_plays(
         self,
-        last_play: Play,
+        last_play: Play = Play(),
     ) -> list[Play]:
         """
         Return all valid plays compatible with the current combination.

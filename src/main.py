@@ -5,6 +5,7 @@ from player import (
     PlayItSafePlayer,
     Player,
     PlayerType,
+    RLAgent,
 )
 from card import Card, CardCombination, Deck, Play
 import logging
@@ -20,6 +21,9 @@ class BigTwoGame:
     ):
         assert num_players == len(player_types)
         self.deck = Deck()
+        if num_players == 2:
+            # Remove some cards from the deck for 2 players
+            self.deck.cards = self.deck.cards[0:42]
         hands = self.deck.deal(num_players)
         self.players: list[Player] = []
         for i in range(num_players):
