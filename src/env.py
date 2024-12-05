@@ -2,10 +2,12 @@ import numpy as np
 from typing import Optional
 import gymnasium as gym
 from gymnasium import spaces
+from card import cards2box
 from main import *
 
-num_cards = 52
+# 13766 with suits, 360 without
 num_plays = 13766 + 1
+num_cards = 52
 
 
 class BigTwoEnv(gym.Env):
@@ -15,35 +17,43 @@ class BigTwoEnv(gym.Env):
 
         self.action_space = spaces.Discrete(num_plays)
 
-        self.observation_space = spaces.Tuple(
-            (
-                spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int32),
-                spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int32),
-                spaces.Box(
+        self.observation_space = spaces.Dict(
+            {
+                "last_play": spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
+                "hand": spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
+                "discarded": spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
+                "opponent_hand_sizes": spaces.Box(
                     low=0, high=21, shape=(num_agents - 1,), dtype=np.int32
                 ),
-                spaces.Discrete(num_agents),
-            )
+                "last_player": spaces.Discrete(num_agents)
+            }
         )
 
         """
         observation = {
-            "player_hand": [1, 0, 1, ..., 0],  # Cards in the player's hand
-            "discarded": [0, 0, 0, ..., 1],  # Cards on the table
-            "opponent_hand_size": [10, 5, 3],     # Cards left for opponents
-            "recent_player": 1
+            "last_play": [0, 1, 0, ..., 1]      # Last (greatest) play
+            "player_hand": [1, 0, 1, ..., 0]    # Cards in the player's hand
+            "discarded": [0, 0, 0, ..., 1],     # Cards on the table
+            "opponent_hand_size": [10, 5, 3]    # Cards left for opponents
+            "recent_player": 1                  # Last (grestest) playerID
         }
         """
 
         self.reset()
 
     def _get_obs(self):
-        # TODO: Generalize opponent hand size
-        player_hand: list[bool] = [False] * 52
-        for c in self.game.players[self.rl_agentid].hand:
-            player_hand[c.card_index()] = True
-        opponent_hand_size = 21
-        return player_hand, [], opponent_hand_size, self.game.current_player_index
+        opponent_hand_sizes = [
+            len(p.hand)
+            for i, p in enumerate(self.game.players)
+            if i != self.rl_agentid
+        ]
+        return (
+            cards2box(self.game.last_play.cards),
+            cards2box(self.game.players[self.rl_agentid].hand),
+            [],
+            opponent_hand_sizes,
+            self.game.current_player_index,
+        )
 
     def reset(
         self, *, seed: Optional[int] = None, options: Optional[dict] = None

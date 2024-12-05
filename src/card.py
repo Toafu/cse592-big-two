@@ -1,3 +1,4 @@
+import numpy as np
 import random
 import itertools
 from enum import Enum
@@ -60,7 +61,7 @@ class Card:
 
     def suit_index(self):
         return Card.suits[self.suit]
-    
+
     def card_index(self) -> int:
         return 4 * Card.ranks[self.rank] + Card.suits[self.suit]
 
@@ -270,3 +271,10 @@ class Deck:
 
     def deal(self, num_players):
         return [self.cards[i::num_players] for i in range(num_players)]
+
+
+def cards2box(cards: Cards):
+    b = np.zeros(52)
+    for c in cards:
+        b[c.card_index()] = 1
+    return b

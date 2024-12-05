@@ -945,3 +945,18 @@ def test_simplify_play():
     )
 
     assert p.simplify_play() == "34567"
+
+def test_cards2box():
+    cards = [Card("Clubs", "3"),
+    Card("Hearts", "7"),
+    Card("Hearts", "6"),
+    Card("Hearts", "4"),
+    Card("Hearts", "5")]
+
+    b = cards2box(cards)
+    card_indexes = set([c.card_index() for c in cards])
+    for i in range(52):
+        if i in card_indexes:
+            assert b[i] == 1
+        else:
+            assert b[i] == 0
