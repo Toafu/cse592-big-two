@@ -2,7 +2,7 @@ import numpy as np
 from typing import Optional
 import gymnasium as gym
 from gymnasium import spaces
-from card import cards2box
+from card import cards2box, box2cards, identify_combination
 from main import *
 
 # 13766 with suits, 360 without
@@ -15,24 +15,20 @@ class BigTwoEnv(gym.Env):
         self.num_agents: int = num_agents
         self.rl_agentid: int = rl_agentid
 
-        self.action_space = spaces.Discrete(num_plays)
+        self.action_space = spaces.Box(
+            low=0, high=1, shape=(num_cards,), dtype=np.int8
+        )
 
-        self.observation_space = spaces.Dict(
-            {
-                "last_play": spaces.Box(
-                    low=0, high=1, shape=(num_cards,), dtype=np.int8
-                ),
-                "hand": spaces.Box(
-                    low=0, high=1, shape=(num_cards,), dtype=np.int8
-                ),
-                "discarded": spaces.Box(
-                    low=0, high=1, shape=(num_cards,), dtype=np.int8
-                ),
-                "opponent_hand_sizes": spaces.Box(
+        self.observation_space = spaces.Tuple(
+            (
+                spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
+                spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
+                spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
+                spaces.Box(
                     low=0, high=21, shape=(num_agents - 1,), dtype=np.int32
                 ),
-                "last_player": spaces.Discrete(num_agents),
-            }
+                spaces.Discrete(num_agents),
+            )
         )
 
         """
@@ -71,14 +67,26 @@ class BigTwoEnv(gym.Env):
         )
         return self._get_obs(), {}
 
-    def step(self, action):
-        assert self.action_space.contains(action)
-        """
-        Accepts an action
-        
-        Returns a tuple[observation (ObsType), reward (SupportsFloat), terminated (bool), truncated (bool), info (dict)]
-        """
+    # def step(self, action):
+    #     assert self.action_space.contains(action)
+    #     """
+    #     Accepts an action
 
-        reward = 0
-        # TODO: FIX EVERYTHING DOWN HERE
-        return self._get_obs(), reward, False, self.game.is_game_over(), {}
+    #     Returns a tuple[observation (ObsType), reward (SupportsFloat), terminated (bool), truncated (bool), info (dict)]
+    #     """
+    #     cards = box2cards(action)
+    #     # Remove cards from that player's hand
+    #     if cards:
+    #         # Set new last Play
+    #         play = Play(cards, identify_combination(cards))
+    #         self.game.last_play = play
+
+    #         # Set new last player
+    #         self.game.last_player = self.game.current_player_index
+    #         pass
+
+    #     # Advances the turn
+
+    #     reward = 0
+    #     # TODO: FIX EVERYTHING DOWN HERE
+    #     return self._get_obs(), reward, False, self.game.is_game_over(), {}

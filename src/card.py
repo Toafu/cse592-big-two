@@ -6,6 +6,22 @@ from collections import Counter
 from functools import total_ordering
 import typing
 
+from enum import Enum
+
+
+class Color(Enum):
+    NONE = ""
+
+    RESET = "\u001b[0m"
+
+    TEXT_BLACK = "\u001b[30m"
+    TEXT_RED_BRIGHT = "\u001b[31;1m"
+
+    BG_WHITE_BRIGHT = "\u001b[107m"
+
+    STYLE_BOLD = "\u001b[1m"
+    STYLE_ITALIC = "\u001b[3m"
+
 
 class Card:
     """
@@ -36,7 +52,14 @@ class Card:
         self.rank = rank
 
     def __repr__(self):
-        return f"{self.rank} of {self.suit}"
+        symbols = [
+            f"{Color.TEXT_RED_BRIGHT.value}♦",
+            f"{Color.TEXT_BLACK.value}♣",
+            f"{Color.TEXT_RED_BRIGHT.value}♥",
+            f"{Color.TEXT_BLACK.value}♠",
+        ]
+        emoji = symbols[Card.suits[self.suit]]
+        return f"{Color.BG_WHITE_BRIGHT.value}{self.rank}{emoji}{Color.RESET.value}"
 
     def __lt__(self, other: "Card"):
         return (self.rank_index(), self.suit_index()) < (
@@ -290,3 +313,29 @@ def box2cards(box) -> Cards:
         if c:
             cards.append(Card(suits[i % 4], ranks[i // 4]))
     return cards
+
+
+def step(self, action):
+    assert self.action_space.contains(action)
+
+    # Validate action (ensure it's a valid play)
+    if not self.game.is_valid_play(box2cards(action)):
+        # Consider handling invalid actions (e.g., penalty, random play)
+        reward = -1  # Penalty for invalid action
+        return self._get_obs(), reward, False, self.game.is_game_over(), {}
+
+    # Execute the action for the RL agent
+    self.game.play(box2cards(action), self.rl_agentid)
+
+    # Calculate reward based on game state and player goals
+    reward = self._calculate_reward()
+
+    # Check for game termination
+    done = self.game.is_game_over()
+
+    # Get the next observation
+    observation = self._get_obs()
+
+    # Return observation, reward, termination status, and info
+    info = {}
+    return observation, reward, done, info

@@ -6,6 +6,7 @@ from player import (
     Player,
     PlayerType,
     RLAgent,
+    TurnContext,
 )
 from card import Card, CardCombination, Deck, Play
 import logging
@@ -70,16 +71,15 @@ class BigTwoGame:
         while not self.check_other_passes() and not self.is_game_over():
             player = self.players[self.current_player_index]
             LOGGER.info("%s's turn", player.name)
+            available_plays = player.find_plays(self.last_play, self.turns == 0)
             if not isinstance(player, HumanPlayer):
                 LOGGER.info("%s hand: %s", player.name, player.hand)
-                plays: list[Play] = player.find_plays(self.last_play)
-                if self.turns == 0:
-                    plays = [
-                        p for p in plays if Card("Diamonds", "3") in p.cards
-                    ]
-                LOGGER.info("%s options: %s", player.name, plays)
+                LOGGER.info("%s options: %s", player.name, available_plays)
 
-            chosen_play = player.make_play(self.last_play, self.turns == 0)
+            ctx: TurnContext = TurnContext(
+                available_plays, self.last_play, self.turns == 0
+            )
+            chosen_play = player.make_play(ctx)
             if not chosen_play.combination == CardCombination.PASS:
                 self.last_play = chosen_play
                 LOGGER.info("%s plays %s", player.name, self.last_play)

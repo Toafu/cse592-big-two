@@ -708,7 +708,7 @@ def test_make_play():
     ]
 
     p = Player("Rando", hand)
-    chosen_play = p.make_play(Play())
+    chosen_play = p.make_play(TurnContext(available_plays=p.find_plays()))
     for c in chosen_play.cards:
         assert c not in p.hand
 
@@ -731,7 +731,7 @@ def test_aggressive_player():
     ]
 
     p = AggressivePlayer("Aggro", hand)
-    chosen_play = p.make_play(Play())
+    chosen_play = p.make_play(TurnContext(available_plays=p.find_plays()))
     assert chosen_play == Play(
         [
             Card("Clubs", "3"),
@@ -763,7 +763,7 @@ def test_playitsafe_player():
     ]
 
     p = PlayItSafePlayer("Safety", hand)
-    chosen_play = p.make_play(Play(), True)
+    chosen_play = p.make_play(TurnContext(p.find_plays(), game_start=True))
     start_play = Play(
         [
             Card("Diamonds", "3"),
@@ -778,8 +778,9 @@ def test_playitsafe_player():
     assert chosen_play == start_play
 
     p = PlayItSafePlayer("Safety", hand)
+    last_play = Play([Card("Spades", "3")], CardCombination.SINGLE)
     chosen_play = p.make_play(
-        Play([Card("Spades", "3")], CardCombination.SINGLE)
+        TurnContext(p.find_plays(last_play), last_play, False)
     )
     assert chosen_play == Play([Card("Clubs", "4")], CardCombination.SINGLE)
 
@@ -799,7 +800,7 @@ def test_playitsafe_player():
     ]
 
     p = PlayItSafePlayer("Safety", hand)
-    chosen_play = p.make_play(Play())
+    chosen_play = p.make_play(TurnContext(available_plays=p.find_plays()))
     assert chosen_play == Play(
         [Card("Clubs", "3"), Card("Hearts", "3"), Card("Spades", "3")],
         CardCombination.TRIPLE,
@@ -821,7 +822,7 @@ def test_playitsafe_player():
     ]
 
     p = PlayItSafePlayer("Safety", hand)
-    chosen_play = p.make_play(Play())
+    chosen_play = p.make_play(TurnContext(available_plays=p.find_plays()))
     assert chosen_play == Play(
         [
             Card("Clubs", "3"),
@@ -848,7 +849,7 @@ def test_playitsafe_player():
     ]
 
     p = PlayItSafePlayer("Safety", hand)
-    chosen_play = p.make_play(Play())
+    chosen_play = p.make_play(TurnContext(available_plays=p.find_plays()))
     assert chosen_play == Play(
         [Card("Clubs", "3"), Card("Spades", "3")], CardCombination.PAIR
     )

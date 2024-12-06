@@ -1,5 +1,6 @@
 from bisect import bisect_left, bisect_right
 from collections import deque
+from dataclasses import dataclass, field
 import itertools
 import typing
 import random
@@ -10,6 +11,15 @@ import gymnasium as gym
 Cards = typing.List[Card]
 
 
+@dataclass
+class TurnContext:
+    """Contains available plays, the last play, and game start status."""
+
+    available_plays: list[Play] = field(default_factory=list)
+    last_play: Play = field(default_factory=Play)
+    game_start: bool = False
+
+
 class Player:
     """The base player acts randomly."""
 
@@ -18,13 +28,13 @@ class Player:
         self.hand: Cards = sorted(hand)
 
     def find_plays(
-        self,
-        last_play: Play = Play(),
+        self, last_play: Play = Play(), game_start=False
     ) -> list[Play]:
         """
         Return all valid plays compatible with the current combination.
 
         Filter out all plays worse than last_play.
+        If start is True, consider only plays with 3 of Diamonds
         """
         assert last_play.combination != CardCombination.INVALID
         if last_play.combination == CardCombination.ANY:
@@ -139,6 +149,8 @@ class Player:
                             moves.append(p)
                 case CardCombination.FOUROFAKIND:
                     moves += self._find_four_of_a_kinds_(last_play)
+        if game_start:
+            moves = [m for m in moves if Card("Diamonds", "3") in m.cards]
         return moves
 
     def _find_first_viable_rank_(self, last_play: Play) -> int:
@@ -232,14 +244,11 @@ class Player:
         backtrack([], cards)
         return results
 
-    def make_play(self, last_play: Play, start=False) -> Play:
-        """Play a combination. Assumes there are choices to play."""
-        plays: list[Play] = self.find_plays(last_play)
-        if not plays:
+    def make_play(self, ctx: TurnContext) -> Play:
+        """Play a combination and remove cards from hand."""
+        if not ctx.available_plays:
             return Play([], CardCombination.PASS)
-        if start:
-            plays = [p for p in plays if Card("Diamonds", "3") in p.cards]
-        chosen_play: Play = random.choice(plays)
+        chosen_play: Play = random.choice(ctx.available_plays)
         for c in chosen_play.cards:
             self.hand.remove(c)
         return chosen_play
@@ -249,12 +258,12 @@ class Player:
 
 
 class HumanPlayer(Player):
-    def make_play(self, last_play: Play, start=False) -> Play:
+    def make_play(self, ctx: TurnContext) -> Play:
         """Allow a human player to input a play manually."""
         print(f"Your hand:")
         for i, card in enumerate(self.hand):
             print(f"\t{i}: {card}")
-        print(f"Last play: {last_play}")
+        print(f"Last play: {ctx.last_play}")
 
         while True:
             card_indices: str = ""
@@ -273,7 +282,7 @@ class HumanPlayer(Player):
                     )
                     continue
 
-                if start and not any(
+                if ctx.game_start and not any(
                     self.hand[i] == Card("Diamonds", "3") for i in indices
                 ):
                     print(
@@ -292,7 +301,7 @@ class HumanPlayer(Player):
                 play = Play(selected_cards, combination)
 
                 # Check if the play is valid against the last play
-                if play < last_play:
+                if play < ctx.last_play:
                     print(
                         "Your play is not better than the last play. Please enter a valid play."
                     )
@@ -313,38 +322,38 @@ class HumanPlayer(Player):
 
 
 class AggressivePlayer(Player):
-    def make_play(self, last_play: Play, start=False) -> Play:
+    def make_play(self, ctx: TurnContext) -> Play:
         """Play the most aggressive combination."""
-        plays: list[Play] = self.find_plays(last_play)
-        if not plays:
+        if not ctx.available_plays:
             return Play([], CardCombination.PASS)
-        if start:
-            plays = [p for p in plays if Card("Diamonds", "3") in p.cards]
-        chosen_play: Play = plays[-1]
+        chosen_play: Play = ctx.available_plays[-1]
         for c in chosen_play.cards:
             self.hand.remove(c)
         return chosen_play
 
 
 class PlayItSafePlayer(Player):
-    def make_play(self, last_play: Play, start=False) -> Play:
+    def make_play(self, ctx: TurnContext) -> Play:
         """Play the combination that gets rid of the most low cards."""
-        plays: list[Play] = self.find_plays(last_play)
         chosen_play: Play = Play()
-        if not plays:
+        if not ctx.available_plays:
             return Play([], CardCombination.PASS)
         # If we can't control the start, play your weakest
-        if not last_play.combination == CardCombination.ANY:
-            chosen_play = plays[0]
-        if start:
-            plays = [p for p in plays if Card("Diamonds", "3") in p.cards]
+        if not ctx.last_play.combination == CardCombination.ANY:
+            chosen_play = ctx.available_plays[0]
+        if ctx.game_start:
+            ctx.available_plays = [
+                p
+                for p in ctx.available_plays
+                if Card("Diamonds", "3") in p.cards
+            ]
 
-        lowest_rank: str = plays[0].cards[0].rank
-        chosen_play = plays[0]
+        lowest_rank: str = ctx.available_plays[0].cards[0].rank
+        chosen_play = ctx.available_plays[0]
         lowest_rank_freq: int = 0
         # Find which Play gets rid of the most cards with this rank
         # Only really relevant when you start a round
-        for p in plays:
+        for p in ctx.available_plays:
             lowest_rank_count = Counter([c.rank for c in p.cards])[lowest_rank]
             # Avoid starting a round with four of a kind
             if p.combination == CardCombination.FOUROFAKIND:
