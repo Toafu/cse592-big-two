@@ -53,7 +53,8 @@ class BigTwoGame:
                 self.current_player_index = i
                 break
         self.last_play: Play = Play()
-        self.current_combination = CardCombination.ANY
+        self.last_player: int = 0
+        self.discarded: list[Card] = []
         self.turns: int = 0
 
     def next_player(self):
@@ -82,6 +83,9 @@ class BigTwoGame:
             if not chosen_play.combination == CardCombination.PASS:
                 self.last_play = chosen_play
                 LOGGER.info("%s plays %s", player.name, self.last_play)
+                for c in self.last_play.cards:
+                    self.discarded.append(c)
+                self.last_player = self.current_player_index
                 self.passes[self.current_player_index] = False
             else:
                 LOGGER.info("%s passes", player.name)

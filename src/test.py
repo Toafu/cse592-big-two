@@ -946,12 +946,15 @@ def test_simplify_play():
 
     assert p.simplify_play() == "34567"
 
+
 def test_cards2box():
-    cards = [Card("Clubs", "3"),
-    Card("Hearts", "7"),
-    Card("Hearts", "6"),
-    Card("Hearts", "4"),
-    Card("Hearts", "5")]
+    cards = [
+        Card("Clubs", "3"),
+        Card("Hearts", "7"),
+        Card("Hearts", "6"),
+        Card("Hearts", "4"),
+        Card("Hearts", "5"),
+    ]
 
     b = cards2box(cards)
     card_indexes = set([c.card_index() for c in cards])
@@ -960,3 +963,22 @@ def test_cards2box():
             assert b[i] == 1
         else:
             assert b[i] == 0
+
+
+def test_box2cards():
+    box = [0] * 52
+    box[5] = 1  # 4 of Clubs
+    box[40] = 1  # King of Diamonds
+    box[37] = 1  # Queen of Clubs
+    box[9] = 1  # 5 of Clubs
+    box[19] = 1  # 7 of Spades
+
+    validation_cards: Cards = [
+        Card("Clubs", "4"),
+        Card("Clubs", "5"),
+        Card("Spades", "7"),
+        Card("Clubs", "Q"),
+        Card("Diamonds", "K"),
+    ]
+
+    assert box2cards(box) == validation_cards

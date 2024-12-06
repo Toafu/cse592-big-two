@@ -274,7 +274,19 @@ class Deck:
 
 
 def cards2box(cards: Cards):
+    """Convert Cards to boolean list."""
     b = np.zeros(52)
     for c in cards:
         b[c.card_index()] = 1
     return b
+
+
+def box2cards(box) -> Cards:
+    """Convert boolean list to Cards."""
+    cards: Cards = []
+    suits = [s for s in Card.suits.keys()]
+    ranks = [r for r in Card.ranks.keys()]
+    for i, c in enumerate(box):
+        if c:
+            cards.append(Card(suits[i % 4], ranks[i // 4]))
+    return cards

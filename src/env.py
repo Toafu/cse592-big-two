@@ -19,13 +19,19 @@ class BigTwoEnv(gym.Env):
 
         self.observation_space = spaces.Dict(
             {
-                "last_play": spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
-                "hand": spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
-                "discarded": spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
+                "last_play": spaces.Box(
+                    low=0, high=1, shape=(num_cards,), dtype=np.int8
+                ),
+                "hand": spaces.Box(
+                    low=0, high=1, shape=(num_cards,), dtype=np.int8
+                ),
+                "discarded": spaces.Box(
+                    low=0, high=1, shape=(num_cards,), dtype=np.int8
+                ),
                 "opponent_hand_sizes": spaces.Box(
                     low=0, high=21, shape=(num_agents - 1,), dtype=np.int32
                 ),
-                "last_player": spaces.Discrete(num_agents)
+                "last_player": spaces.Discrete(num_agents),
             }
         )
 
@@ -35,7 +41,7 @@ class BigTwoEnv(gym.Env):
             "player_hand": [1, 0, 1, ..., 0]    # Cards in the player's hand
             "discarded": [0, 0, 0, ..., 1],     # Cards on the table
             "opponent_hand_size": [10, 5, 3]    # Cards left for opponents
-            "recent_player": 1                  # Last (grestest) playerID
+            "last_player": 1                    # Last (grestest) playerID
         }
         """
 
@@ -47,13 +53,13 @@ class BigTwoEnv(gym.Env):
             for i, p in enumerate(self.game.players)
             if i != self.rl_agentid
         ]
-        return (
-            cards2box(self.game.last_play.cards),
-            cards2box(self.game.players[self.rl_agentid].hand),
-            [],
-            opponent_hand_sizes,
-            self.game.current_player_index,
-        )
+        return {
+            "last_play": cards2box(self.game.last_play.cards),
+            "player_hand": cards2box(self.game.players[self.rl_agentid].hand),
+            "discarded": cards2box(self.game.discarded),
+            "opponent_hand_size": opponent_hand_sizes,
+            "last_player": self.game.last_player,
+        }
 
     def reset(
         self, *, seed: Optional[int] = None, options: Optional[dict] = None
@@ -66,20 +72,11 @@ class BigTwoEnv(gym.Env):
         return self._get_obs(), {}
 
     def step(self, action):
+        assert self.action_space.contains(action)
         """
-        # Map the action (element of {0,1,2,3}) to the direction we walk in
-        direction = self._action_to_direction[action]
-        # We use `np.clip` to make sure we don't leave the grid bounds
-        self._agent_location = np.clip(
-            self._agent_location + direction, 0, self.size - 1
-        )
-
-        # An environment is completed if and only if the agent has reached the target
-        terminated = np.array_equal(self._agent_location, self._target_location)
-        truncated = False
-        reward = 1 if terminated else 0  # the agent is only reached at the end of the episode
-        observation = self._get_obs()
-        info = self._get_info()
+        Accepts an action
+        
+        Returns a tuple[observation (ObsType), reward (SupportsFloat), terminated (bool), truncated (bool), info (dict)]
         """
 
         reward = 0
