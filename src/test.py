@@ -107,12 +107,12 @@ def test_validate_singles():
     p = Player("Singleton", hand)
     combo = CardCombination.SINGLE
     last_play: Play = Play([Card("Hearts", "8")], combo)
-    available_plays = p.find_plays(last_play)
+    ctx = p.find_plays(last_play)
 
     split = bisect_right(p.hand, last_play.cards[0])
     unavailable_plays = [[i] for i in p.hand[0:split]]
 
-    for play in available_plays:
+    for play in ctx.available_plays:
         assert last_play < play
 
     for cards in unavailable_plays:
@@ -138,10 +138,10 @@ def test_validate_pairs():
     p = Player("Pairington", hand)
     combo = CardCombination.PAIR
     last_play = Play([Card("Spades", "5"), Card("Clubs", "5")], combo)
-    available_plays = p.find_plays(last_play)
-    all_plays = p.find_plays(Play([], combo))
-    unavailable_plays = set(all_plays) - set(available_plays)
-    for play in available_plays:
+    ctx = p.find_plays(last_play)
+    all_ctx = p.find_plays(Play([], combo))
+    unavailable_plays = set(all_ctx.available_plays) - set(ctx.available_plays)
+    for play in ctx.available_plays:
         assert last_play < play
     for play in unavailable_plays:
         assert play < last_play
@@ -166,8 +166,8 @@ def test_validate_pairs_none():
     p = Player("Pairington", hand)
     combo = CardCombination.PAIR
     last_play = Play([Card("Spades", "2"), Card("Clubs", "2")], combo)
-    available_plays = p.find_plays(last_play)
-    assert len(available_plays) == 0
+    ctx = p.find_plays(last_play)
+    assert len(ctx.available_plays) == 0
 
 
 def test_validate_fourofakinds_normal():
@@ -226,7 +226,7 @@ def test_validate_fourofakinds_normal():
         ],
         CardCombination.FOUROFAKIND,
     )
-    available_plays = set(p.find_plays(last_play))
+    available_plays = set(p.find_plays(last_play).available_plays)
     validation_set_sevens: set[Play] = set(
         Play(fourofakind_seven + [e], CardCombination.FOUROFAKIND)
         for e in everything_else_seven
@@ -289,7 +289,7 @@ def test_validate_fourofakinds_special():
     last_play = Play(
         [Card("Spades", "A"), Card("Clubs", "A")], CardCombination.PAIR
     )
-    available_plays = set(p.find_plays(last_play))
+    available_plays = set(p.find_plays(last_play).available_plays)
     validation_set_sevens: set[Play] = set(
         Play(fourofakind_seven + [e], CardCombination.FOUROFAKIND)
         for e in everything_else_seven
@@ -330,7 +330,7 @@ def test_validate_full_houses():
         ],
         combo,
     )
-    available_plays = set(p.find_plays(last_play))
+    available_plays = set(p.find_plays(last_play).available_plays)
     all_pairs = p._find_same_rank_combos_(
         Play(),
         2,
@@ -393,7 +393,7 @@ def test_validate_straights():
 
     p = Player("Straightington", hand)
     combo = CardCombination.STRAIGHT
-    available_plays = set(p.find_plays(last_play))
+    available_plays = set(p.find_plays(last_play).available_plays)
     validation_list: list[Play] = [
         Play(
             [
@@ -469,7 +469,7 @@ def test_validate_straights():
         Card("Clubs", "2"),
     ]
 
-    assert len(p.find_plays(last_play)) == 3
+    assert len(p.find_plays(last_play).available_plays) == 3
 
 
 def test_validate_straights_special():
@@ -481,7 +481,10 @@ def test_validate_straights_special():
     ]
 
     p = Player("p", hand)
-    assert len(p.find_plays(Play([], CardCombination.STRAIGHT))) == 0
+    assert (
+        len(p.find_plays(Play([], CardCombination.STRAIGHT)).available_plays)
+        == 0
+    )
 
     hand: list[Card] = [
         Card("Diamonds", "3"),
@@ -504,7 +507,7 @@ def test_validate_straights_special():
     )
 
     p.hand = hand
-    assert len(p.find_plays(small_straight)) == 0
+    assert len(p.find_plays(small_straight).available_plays) == 0
 
     p.hand = [
         Card("Spades", "A"),
@@ -513,7 +516,7 @@ def test_validate_straights_special():
         Card("Hearts", "2"),
         Card("Spades", "2"),
     ]
-    assert len(p.find_plays(small_straight)) == 1
+    assert len(p.find_plays(small_straight).available_plays) == 1
 
     p.hand = [
         Card("Hearts", "3"),
@@ -536,7 +539,7 @@ def test_validate_straights_special():
         CardCombination.STRAIGHT,
     )
 
-    assert len(p.find_plays(last_play)) == 0
+    assert len(p.find_plays(last_play).available_plays) == 0
 
 
 def test_construct_plays():
@@ -635,13 +638,35 @@ def test_start_game():
     p = Player("Toafu", hand)
     # Since quads can be played "any time", we cannot overcount them
     # Subtract 9 from all play counts (except quad) to not double count them
-    assert len(p.find_plays(Play([], CardCombination.SINGLE))) - 9 == 13
-    assert len(p.find_plays(Play([], CardCombination.PAIR))) - 9 == 10
-    assert len(p.find_plays(Play([], CardCombination.TRIPLE))) - 9 == 5
-    assert len(p.find_plays(Play([], CardCombination.FOUROFAKIND))) == 9
-    assert len(p.find_plays(Play([], CardCombination.STRAIGHT))) - 9 == 0
-    assert len(p.find_plays(Play([], CardCombination.FULLHOUSE))) - 9 == 23
-    assert len(p.find_plays(Play())) == num_plays
+    assert (
+        len(p.find_plays(Play([], CardCombination.SINGLE)).available_plays) - 9
+        == 13
+    )
+    assert (
+        len(p.find_plays(Play([], CardCombination.PAIR)).available_plays) - 9
+        == 10
+    )
+    assert (
+        len(p.find_plays(Play([], CardCombination.TRIPLE)).available_plays) - 9
+        == 5
+    )
+    assert (
+        len(
+            p.find_plays(Play([], CardCombination.FOUROFAKIND)).available_plays
+        )
+        == 9
+    )
+    assert (
+        len(p.find_plays(Play([], CardCombination.STRAIGHT)).available_plays)
+        - 9
+        == 0
+    )
+    assert (
+        len(p.find_plays(Play([], CardCombination.FULLHOUSE)).available_plays)
+        - 9
+        == 23
+    )
+    assert len(p.find_plays(Play()).available_plays) == num_plays
 
 
 def test_play_fourofakind_on_single():
@@ -658,12 +683,14 @@ def test_play_fourofakind_on_single():
     last_play = Play([Card("Spades", "9")], CardCombination.SINGLE)
     p = Player("", hand)
     validation_set: set[Play] = set()
-    for quad in p.find_plays(Play([], CardCombination.FOUROFAKIND)):
+    for quad in p.find_plays(
+        Play([], CardCombination.FOUROFAKIND)
+    ).available_plays:
         validation_set.add(quad)
     validation_set.add(Play([Card("Diamonds", "10")], CardCombination.SINGLE))
     validation_set.add(Play([Card("Clubs", "K")], CardCombination.SINGLE))
-    available_plays = set(p.find_plays(last_play))
-    for play in p.find_plays(last_play):
+    available_plays = set(p.find_plays(last_play).available_plays)
+    for play in p.find_plays(last_play).available_plays:
         assert play in validation_set
     for play in validation_set:
         assert play in available_plays
@@ -708,7 +735,7 @@ def test_make_play():
     ]
 
     p = Player("Rando", hand)
-    chosen_play = p.make_play(TurnContext(available_plays=p.find_plays()))
+    chosen_play = p.make_play(p.find_plays())
     for c in chosen_play.cards:
         assert c not in p.hand
 
@@ -731,7 +758,7 @@ def test_aggressive_player():
     ]
 
     p = AggressivePlayer("Aggro", hand)
-    chosen_play = p.make_play(TurnContext(available_plays=p.find_plays()))
+    chosen_play = p.make_play(p.find_plays())
     assert chosen_play == Play(
         [
             Card("Clubs", "3"),
@@ -763,7 +790,8 @@ def test_playitsafe_player():
     ]
 
     p = PlayItSafePlayer("Safety", hand)
-    chosen_play = p.make_play(TurnContext(p.find_plays(), game_start=True))
+    ctx = p.find_plays(game_start=True)
+    chosen_play = p.make_play(ctx)
     start_play = Play(
         [
             Card("Diamonds", "3"),
@@ -779,9 +807,7 @@ def test_playitsafe_player():
 
     p = PlayItSafePlayer("Safety", hand)
     last_play = Play([Card("Spades", "3")], CardCombination.SINGLE)
-    chosen_play = p.make_play(
-        TurnContext(p.find_plays(last_play), last_play, False)
-    )
+    chosen_play = p.make_play(p.find_plays(last_play))
     assert chosen_play == Play([Card("Clubs", "4")], CardCombination.SINGLE)
 
     hand = [
@@ -800,7 +826,7 @@ def test_playitsafe_player():
     ]
 
     p = PlayItSafePlayer("Safety", hand)
-    chosen_play = p.make_play(TurnContext(available_plays=p.find_plays()))
+    chosen_play = p.make_play(p.find_plays())
     assert chosen_play == Play(
         [Card("Clubs", "3"), Card("Hearts", "3"), Card("Spades", "3")],
         CardCombination.TRIPLE,
@@ -822,7 +848,7 @@ def test_playitsafe_player():
     ]
 
     p = PlayItSafePlayer("Safety", hand)
-    chosen_play = p.make_play(TurnContext(available_plays=p.find_plays()))
+    chosen_play = p.make_play(p.find_plays())
     assert chosen_play == Play(
         [
             Card("Clubs", "3"),
@@ -849,7 +875,7 @@ def test_playitsafe_player():
     ]
 
     p = PlayItSafePlayer("Safety", hand)
-    chosen_play = p.make_play(TurnContext(available_plays=p.find_plays()))
+    chosen_play = p.make_play(p.find_plays())
     assert chosen_play == Play(
         [Card("Clubs", "3"), Card("Spades", "3")], CardCombination.PAIR
     )
@@ -861,7 +887,7 @@ def test_no_options():
 
     p = Player("Almost", hand)
     last_play = Play([Card("Spades", "K")], CardCombination.SINGLE)
-    assert len(p.find_plays(last_play)) == 0
+    assert len(p.find_plays(last_play).available_plays) == 0
 
 
 def test_small_hand():
@@ -870,18 +896,18 @@ def test_small_hand():
     p = Player("", hand)
 
     last_play: Play = Play([Card("Clubs", "9")], CardCombination.SINGLE)
-    assert len(p.find_plays(last_play)) == 0
+    assert len(p.find_plays(last_play).available_plays) == 0
 
     last_play: Play = Play(
         [Card("Clubs", "9"), Card("Hearts", "9")], CardCombination.PAIR
     )
-    assert len(p.find_plays(last_play)) == 0
+    assert len(p.find_plays(last_play).available_plays) == 0
 
     last_play: Play = Play(
         [Card("Clubs", "9"), Card("Hearts", "9"), Card("Spades", "9")],
         CardCombination.TRIPLE,
     )
-    assert len(p.find_plays(last_play)) == 0
+    assert len(p.find_plays(last_play).available_plays) == 0
 
     last_play: Play = Play(
         [
@@ -893,7 +919,7 @@ def test_small_hand():
         ],
         CardCombination.FULLHOUSE,
     )
-    assert len(p.find_plays(last_play)) == 0
+    assert len(p.find_plays(last_play).available_plays) == 0
 
     last_play: Play = Play(
         [
@@ -905,7 +931,7 @@ def test_small_hand():
         ],
         CardCombination.STRAIGHT,
     )
-    assert len(p.find_plays(last_play)) == 0
+    assert len(p.find_plays(last_play).available_plays) == 0
 
     last_play: Play = Play(
         [
@@ -917,7 +943,7 @@ def test_small_hand():
         ],
         CardCombination.FOUROFAKIND,
     )
-    assert len(p.find_plays(last_play)) == 0
+    assert len(p.find_plays(last_play).available_plays) == 0
 
 
 def test_simplify_play():

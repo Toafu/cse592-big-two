@@ -67,26 +67,26 @@ class BigTwoEnv(gym.Env):
         )
         return self._get_obs(), {}
 
-    # def step(self, action):
-    #     assert self.action_space.contains(action)
-    #     """
-    #     Accepts an action
+    def step(self, action):
+        assert self.action_space.contains(action)
+        """
+        Accepts an action
 
-    #     Returns a tuple[observation (ObsType), reward (SupportsFloat), terminated (bool), truncated (bool), info (dict)]
-    #     """
-    #     cards = box2cards(action)
-    #     # Remove cards from that player's hand
-    #     if cards:
-    #         # Set new last Play
-    #         play = Play(cards, identify_combination(cards))
-    #         self.game.last_play = play
+        Returns a tuple[observation (ObsType), reward (SupportsFloat), terminated (bool), truncated (bool), info (dict)]
+        """
+        cards = box2cards(action)
+        # Remove cards from that player's hand
+        if cards:
+            # Set new last Play
+            play = Play(cards, identify_combination(cards))
+            self.game.last_play = play
 
-    #         # Set new last player
-    #         self.game.last_player = self.game.current_player_index
-    #         pass
+            # Set new last player
+            self.game.last_player = self.game.current_player_index
+            pass
 
-    #     # Advances the turn
+        # Advances the turn
 
-    #     reward = 0
-    #     # TODO: FIX EVERYTHING DOWN HERE
-    #     return self._get_obs(), reward, False, self.game.is_game_over(), {}
+        reward = 0
+        # TODO: FIX EVERYTHING DOWN HERE
+        return self._get_obs(), reward, False, self.game.is_game_over(), {}

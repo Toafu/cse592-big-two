@@ -29,7 +29,7 @@ class Player:
 
     def find_plays(
         self, last_play: Play = Play(), game_start=False
-    ) -> list[Play]:
+    ) -> TurnContext:
         """
         Return all valid plays compatible with the current combination.
 
@@ -151,7 +151,7 @@ class Player:
                     moves += self._find_four_of_a_kinds_(last_play)
         if game_start:
             moves = [m for m in moves if Card("Diamonds", "3") in m.cards]
-        return moves
+        return TurnContext(moves, last_play, game_start)
 
     def _find_first_viable_rank_(self, last_play: Play) -> int:
         """
