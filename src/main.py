@@ -6,7 +6,6 @@ from player import (
     Player,
     PlayerType,
     RLAgent,
-    TurnContext,
 )
 from card import Card, CardCombination, Deck, Play
 import logging
@@ -40,8 +39,8 @@ class BigTwoGame:
                         PlayItSafePlayer(f"PlayItSafe{i}", hands[i])
                     )
                 case PlayerType.RLAgent:
-                    # TODO: IMPLEMENT RLAGENT
-                    self.players.append(Player(f"Random{i}", hands[i]))
+                    self.players.append(RLAgent(f"RL{i}", hands[i]))
+                    pass
 
         # variable to track passes
         self.passes = [False] * len(self.players)
@@ -94,6 +93,7 @@ class BigTwoGame:
 
     # function to check if all the other players have passed their turn
     def check_other_passes(self):
+        """Returns true if all players but one pass in a row."""
         for i, has_passed in enumerate(self.passes):
             # Skip current player and check if any other player hasn't passed
             if i != self.current_player_index and not has_passed:
@@ -117,9 +117,7 @@ class BigTwoGame:
         assert False, "No winner after game ended"
 
 
-if __name__ == "__main__":
-    if len(argv) > 1 and argv[1].lower() == "info":
-        logging.basicConfig(level=logging.INFO)
+def get_greedy_statistics():
     games: int = 1000
     random_won: int = 0
     aggro_won: int = 0
@@ -146,3 +144,20 @@ if __name__ == "__main__":
     print(f"Random won {random_won}/{games} games against random agents")
     print(f"Aggressive won {aggro_won}/{games} games against random agents")
     print(f"Safe won {safe_won}/{games} games random agents")
+
+if __name__ == "__main__":
+    if len(argv) > 1 and argv[1].lower() == "info":
+        logging.basicConfig(level=logging.INFO)
+    
+    # TODO: Make training loop
+    # Make the env
+
+    # Get our agents
+
+    # while not done
+        # ctx = agent.find_plays()
+        # play = agent.make_play(ctx)
+        # step(play)
+
+        # TODO: Figure out update function. Need reward function first.
+

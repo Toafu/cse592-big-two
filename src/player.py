@@ -1,5 +1,5 @@
 from bisect import bisect_left, bisect_right
-from collections import deque
+from collections import deque, defaultdict
 from dataclasses import dataclass, field
 import itertools
 import typing
@@ -375,9 +375,55 @@ class PlayItSafePlayer(Player):
         return chosen_play
 
 
-class RLAgent(Player):
-    pass
+# env = gym.make("BigTwoEnv", sab=True)
+# done = False
+# observation, info = env.reset()
+# action = env.action_space.sample()
+# observation, reward, terminated, truncated, info = env.step(action)
 
+
+class RLAgent(Player):
+    def __init__(
+        self,
+        name,
+        hand,
+        # env: BigTwoEnv,
+        alpha = 0.1,
+        initial_epsilon = 1,
+        epsilon_decay = 0.1,
+        final_epsilon = 0.1,
+        gamma: float = 0.9,
+    ):
+        super().__init__(name, hand)
+
+        self.q_values = defaultdict(lambda: defaultdict(float))
+        self.alpha = alpha
+        self.epsilon = initial_epsilon
+        self.epsilon_decay = epsilon_decay
+        self.final_epsilon = final_epsilon
+        self.gamma = gamma
+
+    def get_action(self, obs) -> np.ndarray:
+        tuple(obs[0])
+        hashable_obs = (tuple(obs[0]), tuple(obs[1]), tuple(obs[2]), tuple(obs[3]), obs[4])
+        ctx = self.find_plays()
+
+        if np.random.random() < self.epsilon:
+            # Random action
+            play = self.make_play(ctx)
+            return cards2box(play.cards)
+        else:
+            q_values = {
+                tuple(cards2box(action.cards)): self.q_values[hashable_obs][tuple(cards2box(action.cards))]
+                for action in ctx.available_plays
+            }
+            max_q = -np.inf
+            best_action = np.zeros(52)
+            for k, v in q_values.items():
+                if v > max_q:
+                    max_q = v
+                    best_action = k
+            return np.array(best_action)
 
 class PlayerType(Enum):
     Random = 0

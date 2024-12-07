@@ -1,5 +1,6 @@
 from card import *
 from player import *
+from env import *
 
 
 def test_compare_pairs():
@@ -1009,3 +1010,14 @@ def test_box2cards():
     ]
 
     assert box2cards(box) == validation_cards
+
+
+def test_env():
+    e = BigTwoEnv()
+    obs = e._get_obs()
+    last_play, player_hand, discarded, opponent_hand_size, last_player = obs
+    assert sum(last_play) == 0
+    assert sum(discarded) == 0
+    print(e.game.players)
+    assert sum(player_hand) == opponent_hand_size[0]
+    assert last_player == 0

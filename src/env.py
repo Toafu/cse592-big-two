@@ -2,9 +2,8 @@ import numpy as np
 from typing import Optional
 import gymnasium as gym
 from gymnasium import spaces
-from card import cards2box, box2cards, identify_combination
-from main import *
-
+from card import Play, cards2box, box2cards, identify_combination
+from main import BigTwoGame, PlayerType
 # 13766 with suits, 360 without
 num_plays = 13766 + 1
 num_cards = 52
@@ -15,10 +14,9 @@ class BigTwoEnv(gym.Env):
         self.num_agents: int = num_agents
         self.rl_agentid: int = rl_agentid
 
-        self.action_space = spaces.Box(
+        self.action_space: spaces.Space = spaces.Box(
             low=0, high=1, shape=(num_cards,), dtype=np.int8
         )
-
         self.observation_space = spaces.Tuple(
             (
                 spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
@@ -49,13 +47,13 @@ class BigTwoEnv(gym.Env):
             for i, p in enumerate(self.game.players)
             if i != self.rl_agentid
         ]
-        return {
-            "last_play": cards2box(self.game.last_play.cards),
-            "player_hand": cards2box(self.game.players[self.rl_agentid].hand),
-            "discarded": cards2box(self.game.discarded),
-            "opponent_hand_size": opponent_hand_sizes,
-            "last_player": self.game.last_player,
-        }
+        return (
+            cards2box(self.game.last_play.cards),
+            cards2box(self.game.players[self.rl_agentid].hand),
+            cards2box(self.game.discarded),
+            opponent_hand_sizes,
+            self.game.last_player,
+        )
 
     def reset(
         self, *, seed: Optional[int] = None, options: Optional[dict] = None
@@ -74,19 +72,45 @@ class BigTwoEnv(gym.Env):
 
         Returns a tuple[observation (ObsType), reward (SupportsFloat), terminated (bool), truncated (bool), info (dict)]
         """
+        current_player_index: int = self.game.current_player_index
+        current_player = self.game.players[current_player_index]
         cards = box2cards(action)
-        # Remove cards from that player's hand
         if cards:
-            # Set new last Play
+            # Remove cards from that player's hand
             play = Play(cards, identify_combination(cards))
+            # TODO: REMOVE THIS LOGIC FROM PLAYERS
+            for c in cards:
+                current_player.hand.remove(c)
+            
+            # Set new last Play
             self.game.last_play = play
 
             # Set new last player
-            self.game.last_player = self.game.current_player_index
-            pass
+            self.game.last_player = current_player_index
 
-        # Advances the turn
-
+            # Update passes
+            self.game.passes[current_player_index] = False
+        
+        else:
+            self.game.passes[current_player_index] = True
+        
+        # TODO: Calculate reward
+        # Give bonus for playing more cards
+        # You can detect if a round has started if last_play == Play()
         reward = 0
-        # TODO: FIX EVERYTHING DOWN HERE
+        
+        # Increments turn count
+        self.game.turns += 1
+
+        # Set new current player
+        self.game.next_player()
+
+        # If a round is over
+        if self.game.check_other_passes():
+            # Reset last_play
+            self.game.last_play = Play()
+
+            # Reset passes
+            self.game.passes = [False] * self.num_agents
+
         return self._get_obs(), reward, False, self.game.is_game_over(), {}
