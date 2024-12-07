@@ -405,6 +405,7 @@ class RLAgent(Player):
         self.final_epsilon = final_epsilon
         self.gamma = gamma
         self.play_history: list[Play] = []
+        self.last_state_action_q = ()
 
     def make_obs_hashable(self, obs):
         return (
@@ -438,10 +439,10 @@ class RLAgent(Player):
 
         if chosen_play.combination != CardCombination.PASS:
             self.play_history.append(chosen_play)
-
         return chosen_play
 
     def update(self, obs, action, reward, done: bool, next_obs, info):
+        """Update internal Q table. Handle winning rounds and games."""
         action = tuple(action)
         obs = self.make_obs_hashable(obs)
         next_obs = self.make_obs_hashable(next_obs)
@@ -451,6 +452,8 @@ class RLAgent(Player):
             else 0
         )
         future_q_value = (not done) * q_next_obs
+        self.last_state_action_q = (obs, action, self.q_values[obs][action])
+        
         if done:
             # Can only get here if this agent ends the game
             reward += 100

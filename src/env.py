@@ -139,10 +139,6 @@ class BigTwoEnv(gym.Env):
                 Color.RESET.value,
             )
 
-            # TODO: Fix rewards based on round buffer
-            # If last player is you, you must have won previous round
-            winning_action = self.game.round_agent_actions[-self.num_agents]
-
         return (
             self._get_obs(),
             reward,

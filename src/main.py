@@ -235,11 +235,6 @@ if __name__ == "__main__":
 
             obs = next_obs
 
-        # TODO: Punish agent if it loses
-        assert game.winner
-        if game.winner.id != env.unwrapped.rl_agentid:
-            pass
-
         LOGGER.info(
             "%s has won the game!", agents[game.current_player_index].name
         )
