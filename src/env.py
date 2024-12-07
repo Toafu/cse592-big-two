@@ -3,8 +3,16 @@ from typing import Optional
 import logging
 import gymnasium as gym
 from gymnasium import spaces
-from card import Play, cards2box, box2cards, identify_combination
-from main import BigTwoGame, PlayerType
+from card import (
+    Color,
+    CardCombination,
+    Play,
+    cards2box,
+    box2cards,
+    identify_combination,
+)
+from main import BigTwoGame
+from player import *
 
 LOGGER = logging.getLogger(__name__)
 
@@ -14,9 +22,10 @@ num_cards = 52
 
 
 class BigTwoEnv(gym.Env):
-    def __init__(self, num_agents: int = 2, rl_agentid: int = 0) -> None:
-        self.num_agents: int = num_agents
-        self.rl_agentid: int = rl_agentid
+    def __init__(self, game: BigTwoGame) -> None:
+        self.game = game
+        self.num_agents: int = len(game.players)
+        self.rl_agentid: int = next(i for i, p in enumerate(game.players) if isinstance(p, RLAgent))
 
         self.action_space: spaces.Space = spaces.Box(
             low=0, high=1, shape=(num_cards,), dtype=np.int8
@@ -27,9 +36,9 @@ class BigTwoEnv(gym.Env):
                 spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
                 spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
                 spaces.Box(
-                    low=0, high=21, shape=(num_agents - 1,), dtype=np.int32
+                    low=0, high=21, shape=(self.num_agents - 1,), dtype=np.int8
                 ),
-                spaces.Discrete(num_agents),
+                spaces.Discrete(self.num_agents),
             )
         )
 
@@ -55,19 +64,21 @@ class BigTwoEnv(gym.Env):
             cards2box(self.game.last_play.cards),
             cards2box(self.game.players[self.rl_agentid].hand),
             cards2box(self.game.discarded),
-            opponent_hand_sizes,
+            np.asarray(opponent_hand_sizes, dtype=np.int8),
             self.game.last_player,
         )
+
+    def _get_info(self):
+        # TODO: Fix for round win
+        return {"win_bonus": 5}
 
     def reset(
         self, *, seed: Optional[int] = None, options: Optional[dict] = None
     ):
         """Players get new hands, discarded is empty, determine who starts."""
         super().reset(seed=seed)
-        self.game = BigTwoGame(
-            self.num_agents, [PlayerType.RLAgent, PlayerType.Random]
-        )
-        return self._get_obs(), {}
+        self.game.setup()
+        return self._get_obs(), self._get_info()
 
     def step(self, action):
         assert self.action_space.contains(action)
@@ -80,6 +91,7 @@ class BigTwoEnv(gym.Env):
         current_player = self.game.players[current_player_index]
         cards = box2cards(action)
         LOGGER.info("%s hand: %s", current_player.name, current_player.hand)
+        play: Play = Play([], CardCombination.PASS)
         if cards:
             # Remove cards from that player's hand
             play = Play(cards, identify_combination(cards))
@@ -98,13 +110,15 @@ class BigTwoEnv(gym.Env):
 
             LOGGER.info("%s plays %s", current_player.name, play)
         else:
+            # State doesn't change on PASS. Just update passes.
             self.game.passes[current_player_index] = True
             LOGGER.info("%s passes", current_player.name)
 
-        # TODO: Calculate reward
+        self.game.round_agent_actions.append((current_player_index, play))
+
+        # TODO: Tune this function
         # Give bonus for playing more cards
-        # You can detect if a round has started if last_play == Play()
-        reward = 0
+        reward = len(play.cards)
 
         # Increments turn count
         self.game.turns += 1
@@ -119,6 +133,20 @@ class BigTwoEnv(gym.Env):
 
             # Reset passes
             self.game.passes = [False] * self.num_agents
-            LOGGER.info("New round")
+            LOGGER.info(
+                "%sNew round%s",
+                Color.BG_YELLOW_BRIGHT.value,
+                Color.RESET.value,
+            )
 
-        return self._get_obs(), reward, self.game.is_game_over(), False, {}
+            # TODO: Fix rewards based on round buffer
+            # If last player is you, you must have won previous round
+            winning_action = self.game.round_agent_actions[-self.num_agents]
+
+        return (
+            self._get_obs(),
+            reward,
+            self.game.is_game_over(),
+            False,
+            self._get_info(),
+        )

@@ -1,13 +1,13 @@
 from sys import argv
 import logging
 import gymnasium as gym
+import numpy as np
 from gymnasium.envs.registration import register
 from player import (
     AggressivePlayer,
     HumanPlayer,
     PlayItSafePlayer,
     Player,
-    PlayerType,
     RLAgent,
 )
 from card import Card, CardCombination, Deck, Play, cards2box
@@ -18,32 +18,28 @@ LOGGER = logging.getLogger(__name__)
 class BigTwoGame:
     def __init__(
         self,
-        num_players: int = 4,
-        player_types: list[PlayerType] = [PlayerType.Random] * 4,
+        players: list[Player],
     ):
-        assert num_players == len(player_types)
-        self.deck = Deck()
+        self.players = players
+        for i, p in enumerate(players):
+            p.set_id(i)
+        self.setup()
+
+
+    def setup(self):
+        self.deck: Deck = Deck()
+        num_players = len(self.players)
         if num_players == 2:
             # Remove some cards from the deck for 2 players
             self.deck.cards = self.deck.cards[0:42]
+            while Card("Diamonds", "3") not in self.deck.cards:
+                self.deck = Deck()
+                self.deck.cards = self.deck.cards[0:42]
+        assert Card("Diamonds", "3") in self.deck.cards
         hands = self.deck.deal(num_players)
-        self.players: list[Player] = []
-        for i in range(num_players):
-            match player_types[i]:
-                case PlayerType.Random:
-                    self.players.append(Player(f"Random{i}", hands[i]))
-                case PlayerType.Aggressive:
-                    self.players.append(
-                        AggressivePlayer(f"Aggressive{i}", hands[i])
-                    )
-                case PlayerType.PlayItSafe:
-                    self.players.append(
-                        PlayItSafePlayer(f"PlayItSafe{i}", hands[i])
-                    )
-                case PlayerType.RLAgent:
-                    self.players.append(RLAgent(f"RL{i}", hands[i]))
-                    pass
 
+        for i, p in enumerate(self.players):
+            p.set_hand(hands[i])
         # variable to track passes
         self.passes = [False] * len(self.players)
 
@@ -58,6 +54,8 @@ class BigTwoGame:
         self.last_player: int = 0
         self.discarded: list[Card] = []
         self.turns: int = 0
+        self.round_agent_actions: list[tuple[int, Play]] = []
+        self.winner: Player | None = None
 
     def next_player(self):
         self.current_player_index = (self.current_player_index + 1) % len(
@@ -105,7 +103,15 @@ class BigTwoGame:
         return True
 
     def is_game_over(self):
-        return any(not player.has_cards() for player in self.players)
+        game_over: bool = any(
+            not player.has_cards() for player in self.players
+        )
+        if game_over:
+            for p in self.players:
+                if not p.has_cards():
+                    self.winner = p
+                    break
+        return game_over
 
     def start(self):
         LOGGER.info("Starting Big Two Game!")
@@ -117,7 +123,7 @@ class BigTwoGame:
         for player in self.players:
             if not player.has_cards():
                 LOGGER.info("%s has won the game!", player.name)
-                return player.name
+                return player
         assert False, "No winner after game ended"
 
 
@@ -126,34 +132,66 @@ def get_greedy_statistics():
     random_won: int = 0
     aggro_won: int = 0
     safe_won: int = 0
+    safe_won_1v1: int = 0
 
     for i in range(games):
         game = BigTwoGame(
-            player_types=[PlayerType.Aggressive] + ([PlayerType.Random] * 3)
+            [
+                AggressivePlayer(name="Aggressive0"),
+                Player(name="Random1"),
+                Player(name="Random2"),
+                Player(name="Random3"),
+            ]
         )
-        winner: str = game.start()
+        winner: str = game.start().name
         if winner == "Aggressive0":
             aggro_won += 1
-        game = BigTwoGame(
-            player_types=[PlayerType.PlayItSafe] + ([PlayerType.Random] * 3)
+
+        game = game = BigTwoGame(
+            [
+                PlayItSafePlayer(name="PlayItSafe0"),
+                Player(name="Random1"),
+                Player(name="Random2"),
+                Player(name="Random3"),
+            ]
         )
-        winner: str = game.start()
+        winner: str = game.start().name
         if winner == "PlayItSafe0":
             safe_won += 1
-        game = BigTwoGame(player_types=[PlayerType.Random] * 4)
-        winner: str = game.start()
+
+        game = BigTwoGame(
+            [
+                Player(name="Random0"),
+                Player(name="Random1"),
+                Player(name="Random2"),
+                Player(name="Random3"),
+            ]
+        )
+        winner: str = game.start().name
         if winner == "Random0":
             random_won += 1
 
-    print(f"Random won {random_won}/{games} games against random agents")
-    print(f"Aggressive won {aggro_won}/{games} games against random agents")
-    print(f"Safe won {safe_won}/{games} games random agents")
+        game = BigTwoGame(
+            [PlayItSafePlayer(name="PlayItSafe0"), Player(name="Random1")]
+        )
+        winner: str = game.start().name
+        if winner == "PlayItSafe0":
+            safe_won_1v1 += 1
+
+    print(f"Random won {random_won}/{games} games against 3 random agents")
+    print(f"Aggressive won {aggro_won}/{games} games against 3 random agents")
+    print(f"Safe won {safe_won}/{games} games against 3 random agents")
+    print(f"Safe_1v1 won {safe_won_1v1}/{games} games against 1 random agent")
 
 
 if __name__ == "__main__":
     if len(argv) > 1 and argv[1].lower() == "info":
         logging.basicConfig(level=logging.INFO)
 
+    rl_agent = RLAgent(name="RLAgent", hand=[], id=-1)
+    random_agent = Player(name="Random1")
+
+    game: BigTwoGame = BigTwoGame([rl_agent, random_agent])
     register(
         id="BigTwoRL",
         entry_point="env:BigTwoEnv",
@@ -166,25 +204,44 @@ if __name__ == "__main__":
     num_episodes = 1
 
     # Make the env
-    env = gym.make("BigTwoRL")
+    env = gym.make("BigTwoRL", game=game)
     assert isinstance(env.unwrapped, BigTwoEnv)
     # Get our agents
     for e in range(num_episodes):
         obs, info = env.reset()
-        game: BigTwoGame = env.unwrapped.game
         agents = game.players
         done = False
 
         while not done:
             agent = agents[game.current_player_index]
-            LOGGER.info("Loop thinks current player is %i", game.current_player_index)
-            turn_context = agent.find_plays(game.last_play)
-            play = agent.make_play(turn_context)
+            turn_context = agent.find_plays(game.last_play, game.turns == 0)
+            if isinstance(agent, RLAgent):
+                play = agent.make_play(turn_context, obs)
+            else:
+                play = agent.make_play(turn_context)
             action = cards2box(play.cards)
             next_obs, reward, done, _, info = env.step(action)
 
-            obs = next_obs
-        
-        LOGGER.info("%s has won the game!", agents[game.current_player_index].name)
+            if agent.id == env.unwrapped.rl_agentid:
+                assert isinstance(agent, RLAgent)
+                agent.update(
+                    obs,
+                    action,
+                    reward,
+                    done,
+                    next_obs,
+                    env.unwrapped._get_info(),
+                )
 
-    # TODO: Figure out update function. Need reward function first.
+            obs = next_obs
+
+        # TODO: Punish agent if it loses
+        assert game.winner
+        if game.winner.id != env.unwrapped.rl_agentid:
+            pass
+
+        LOGGER.info(
+            "%s has won the game!", agents[game.current_player_index].name
+        )
+
+        game.setup()

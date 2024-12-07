@@ -17,6 +17,7 @@ class Color(Enum):
     TEXT_BLACK = "\u001b[30m"
     TEXT_RED_BRIGHT = "\u001b[31;1m"
 
+    BG_YELLOW_BRIGHT = "\u001b[103m"
     BG_WHITE_BRIGHT = "\u001b[107m"
 
     STYLE_BOLD = "\u001b[1m"

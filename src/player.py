@@ -23,9 +23,16 @@ class TurnContext:
 class Player:
     """The base player acts randomly."""
 
-    def __init__(self, name, hand):
+    def __init__(self, *, name, hand=[], id=0):
         self.name: str = name
         self.hand: Cards = sorted(hand)
+        self.id: int = id
+
+    def set_hand(self, hand):
+        self.hand = sorted(hand)
+
+    def set_id(self, id: int):
+        self.id = id
 
     def find_plays(
         self, last_play: Play = Play(), game_start=False
@@ -381,14 +388,15 @@ class RLAgent(Player):
         self,
         name,
         hand,
+        id,
         # env: BigTwoEnv,
         alpha=0.1,
-        initial_epsilon=1,
+        initial_epsilon=1.0,
         epsilon_decay=0.1,
         final_epsilon=0.1,
         gamma: float = 0.9,
     ):
-        super().__init__(name, hand)
+        super().__init__(name=name, hand=hand, id=id)
 
         self.q_values = defaultdict(lambda: defaultdict(float))
         self.alpha = alpha
@@ -396,36 +404,68 @@ class RLAgent(Player):
         self.epsilon_decay = epsilon_decay
         self.final_epsilon = final_epsilon
         self.gamma = gamma
+        self.play_history: list[Play] = []
 
-    def get_action(self, obs) -> np.ndarray:
-        tuple(obs[0])
-        hashable_obs = (
+    def make_obs_hashable(self, obs):
+        return (
             tuple(obs[0]),
             tuple(obs[1]),
             tuple(obs[2]),
             tuple(obs[3]),
             obs[4],
         )
-        ctx = self.find_plays()
+
+    def make_play(self, ctx: TurnContext, obs=None) -> Play:
+        assert obs
+        obs = self.make_obs_hashable(obs)
+        if not ctx.available_plays:
+            chosen_play = Play([], CardCombination.PASS)
 
         if np.random.random() < self.epsilon:
             # Random action
-            play = self.make_play(ctx)
-            return cards2box(play.cards)
+            chosen_play = super().make_play(ctx)
         else:
-            q_values = {
-                tuple(cards2box(action.cards)): self.q_values[hashable_obs][
-                    tuple(cards2box(action.cards))
-                ]
-                for action in ctx.available_plays
-            }
-            max_q = -np.inf
-            best_action = np.zeros(52)
-            for k, v in q_values.items():
-                if v > max_q:
-                    max_q = v
-                    best_action = k
-            return np.array(best_action)
+            if obs not in self.q_values:
+                chosen_play = super().make_play(ctx)
+            q_obs = self.q_values[obs]
+            best_q: float = max(q_obs)
+            best_actions = [k for k, v in q_obs.items() if v == best_q]
+            best_action: tuple = random.choice(best_actions)
+            best_action_cards = box2cards(best_action)
+            chosen_play = Play(
+                best_action_cards, identify_combination(best_action_cards)
+            )
+
+        if chosen_play.combination != CardCombination.PASS:
+            self.play_history.append(chosen_play)
+
+        return chosen_play
+
+    def update(self, obs, action, reward, done: bool, next_obs, info):
+        action = tuple(action)
+        obs = self.make_obs_hashable(obs)
+        next_obs = self.make_obs_hashable(next_obs)
+        q_next_obs = (
+            max(self.q_values[next_obs].values())
+            if self.q_values[next_obs]
+            else 0
+        )
+        future_q_value = (not done) * q_next_obs
+        if done:
+            # Can only get here if this agent ends the game
+            reward += 100
+        temporal_difference = (
+            reward + self.gamma * future_q_value - self.q_values[obs][action]
+        )
+
+        self.q_values[obs][action] = (
+            self.q_values[obs][action] + self.alpha * temporal_difference
+        )
+
+    def decay_epsilon(self, step):
+        return self.final_epsilon + (self.epsilon - self.epsilon) * (
+            1 / (1 + self.epsilon_decay * step)
+        )
 
 
 class PlayerType(Enum):
