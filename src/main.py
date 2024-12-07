@@ -1,4 +1,7 @@
 from sys import argv
+import logging
+import gymnasium as gym
+from gymnasium.envs.registration import register
 from player import (
     AggressivePlayer,
     HumanPlayer,
@@ -7,8 +10,7 @@ from player import (
     PlayerType,
     RLAgent,
 )
-from card import Card, CardCombination, Deck, Play
-import logging
+from card import Card, CardCombination, Deck, Play, cards2box
 
 LOGGER = logging.getLogger(__name__)
 
@@ -77,6 +79,8 @@ class BigTwoGame:
 
             chosen_play = player.make_play(ctx)
             if not chosen_play.combination == CardCombination.PASS:
+                for c in chosen_play.cards:
+                    player.hand.remove(c)
                 self.last_play = chosen_play
                 LOGGER.info("%s plays %s", player.name, self.last_play)
                 for c in self.last_play.cards:
@@ -145,19 +149,42 @@ def get_greedy_statistics():
     print(f"Aggressive won {aggro_won}/{games} games against random agents")
     print(f"Safe won {safe_won}/{games} games random agents")
 
+
 if __name__ == "__main__":
     if len(argv) > 1 and argv[1].lower() == "info":
         logging.basicConfig(level=logging.INFO)
-    
-    # TODO: Make training loop
+
+    register(
+        id="BigTwoRL",
+        entry_point="env:BigTwoEnv",
+    )
+
+    from env import BigTwoEnv
+
+    # TODO: Complete training loop
+
+    num_episodes = 1
+
     # Make the env
-
+    env = gym.make("BigTwoRL")
+    assert isinstance(env.unwrapped, BigTwoEnv)
     # Get our agents
+    for e in range(num_episodes):
+        obs, info = env.reset()
+        game: BigTwoGame = env.unwrapped.game
+        agents = game.players
+        done = False
 
-    # while not done
-        # ctx = agent.find_plays()
-        # play = agent.make_play(ctx)
-        # step(play)
+        while not done:
+            agent = agents[game.current_player_index]
+            LOGGER.info("Loop thinks current player is %i", game.current_player_index)
+            turn_context = agent.find_plays(game.last_play)
+            play = agent.make_play(turn_context)
+            action = cards2box(play.cards)
+            next_obs, reward, done, _, info = env.step(action)
 
-        # TODO: Figure out update function. Need reward function first.
+            obs = next_obs
+        
+        LOGGER.info("%s has won the game!", agents[game.current_player_index].name)
 
+    # TODO: Figure out update function. Need reward function first.

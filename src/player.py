@@ -249,8 +249,6 @@ class Player:
         if not ctx.available_plays:
             return Play([], CardCombination.PASS)
         chosen_play: Play = random.choice(ctx.available_plays)
-        for c in chosen_play.cards:
-            self.hand.remove(c)
         return chosen_play
 
     def has_cards(self):
@@ -327,8 +325,6 @@ class AggressivePlayer(Player):
         if not ctx.available_plays:
             return Play([], CardCombination.PASS)
         chosen_play: Play = ctx.available_plays[-1]
-        for c in chosen_play.cards:
-            self.hand.remove(c)
         return chosen_play
 
 
@@ -370,8 +366,6 @@ class PlayItSafePlayer(Player):
                 if any(c.rank_index() > Card.ranks["9"] for c in p.cards):
                     continue
                 chosen_play = p
-        for c in chosen_play.cards:
-            self.hand.remove(c)
         return chosen_play
 
 
@@ -388,10 +382,10 @@ class RLAgent(Player):
         name,
         hand,
         # env: BigTwoEnv,
-        alpha = 0.1,
-        initial_epsilon = 1,
-        epsilon_decay = 0.1,
-        final_epsilon = 0.1,
+        alpha=0.1,
+        initial_epsilon=1,
+        epsilon_decay=0.1,
+        final_epsilon=0.1,
         gamma: float = 0.9,
     ):
         super().__init__(name, hand)
@@ -405,7 +399,13 @@ class RLAgent(Player):
 
     def get_action(self, obs) -> np.ndarray:
         tuple(obs[0])
-        hashable_obs = (tuple(obs[0]), tuple(obs[1]), tuple(obs[2]), tuple(obs[3]), obs[4])
+        hashable_obs = (
+            tuple(obs[0]),
+            tuple(obs[1]),
+            tuple(obs[2]),
+            tuple(obs[3]),
+            obs[4],
+        )
         ctx = self.find_plays()
 
         if np.random.random() < self.epsilon:
@@ -414,7 +414,9 @@ class RLAgent(Player):
             return cards2box(play.cards)
         else:
             q_values = {
-                tuple(cards2box(action.cards)): self.q_values[hashable_obs][tuple(cards2box(action.cards))]
+                tuple(cards2box(action.cards)): self.q_values[hashable_obs][
+                    tuple(cards2box(action.cards))
+                ]
                 for action in ctx.available_plays
             }
             max_q = -np.inf
@@ -424,6 +426,7 @@ class RLAgent(Player):
                     max_q = v
                     best_action = k
             return np.array(best_action)
+
 
 class PlayerType(Enum):
     Random = 0

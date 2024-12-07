@@ -1,9 +1,13 @@
 import numpy as np
 from typing import Optional
+import logging
 import gymnasium as gym
 from gymnasium import spaces
 from card import Play, cards2box, box2cards, identify_combination
 from main import BigTwoGame, PlayerType
+
+LOGGER = logging.getLogger(__name__)
+
 # 13766 with suits, 360 without
 num_plays = 13766 + 1
 num_cards = 52
@@ -75,13 +79,14 @@ class BigTwoEnv(gym.Env):
         current_player_index: int = self.game.current_player_index
         current_player = self.game.players[current_player_index]
         cards = box2cards(action)
+        LOGGER.info("%s hand: %s", current_player.name, current_player.hand)
         if cards:
             # Remove cards from that player's hand
             play = Play(cards, identify_combination(cards))
-            # TODO: REMOVE THIS LOGIC FROM PLAYERS
-            for c in cards:
+            LOGGER.info("Reconstructed play %r", play)
+            for c in list(cards):
                 current_player.hand.remove(c)
-            
+
             # Set new last Play
             self.game.last_play = play
 
@@ -90,15 +95,17 @@ class BigTwoEnv(gym.Env):
 
             # Update passes
             self.game.passes[current_player_index] = False
-        
+
+            LOGGER.info("%s plays %s", current_player.name, play)
         else:
             self.game.passes[current_player_index] = True
-        
+            LOGGER.info("%s passes", current_player.name)
+
         # TODO: Calculate reward
         # Give bonus for playing more cards
         # You can detect if a round has started if last_play == Play()
         reward = 0
-        
+
         # Increments turn count
         self.game.turns += 1
 
@@ -112,5 +119,6 @@ class BigTwoEnv(gym.Env):
 
             # Reset passes
             self.game.passes = [False] * self.num_agents
+            LOGGER.info("New round")
 
-        return self._get_obs(), reward, False, self.game.is_game_over(), {}
+        return self._get_obs(), reward, self.game.is_game_over(), False, {}

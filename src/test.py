@@ -738,7 +738,7 @@ def test_make_play():
     p = Player("Rando", hand)
     chosen_play = p.make_play(p.find_plays())
     for c in chosen_play.cards:
-        assert c not in p.hand
+        assert c in p.hand
 
 
 def test_aggressive_player():
@@ -771,7 +771,7 @@ def test_aggressive_player():
         CardCombination.FOUROFAKIND,
     )
     for card in chosen_play.cards:
-        assert card not in p.hand
+        assert card in p.hand
 
 
 def test_playitsafe_player():

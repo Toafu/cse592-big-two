@@ -285,12 +285,13 @@ class Deck:
     Initializes already shuffled.
     """
 
-    def __init__(self):
+    def __init__(self, seed: int | None = None):
         self.cards = [
             Card(suit, rank)
             for suit, rank in itertools.product(Card.suits, Card.ranks)
         ]
-        random.shuffle(self.cards)
+        self.random = random.Random(seed)
+        self.random.shuffle(self.cards)
 
     def deal(self, num_players):
         return [self.cards[i::num_players] for i in range(num_players)]
@@ -298,7 +299,7 @@ class Deck:
 
 def cards2box(cards: Cards):
     """Convert Cards to boolean list."""
-    b = np.zeros(52)
+    b = np.zeros(52, dtype=np.int8)
     for c in cards:
         b[c.card_index()] = 1
     return b
