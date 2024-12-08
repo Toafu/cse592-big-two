@@ -94,15 +94,15 @@ class Card:
 class CardCombination(Enum):
     """Represent a combination."""
 
-    INVALID = -1
-    ANY = 0
-    SINGLE = 1
-    PAIR = 2
-    TRIPLE = 3
-    FULLHOUSE = 4
-    STRAIGHT = 5
-    FOUROFAKIND = 6
-    PASS = 7
+    INVALID = -2
+    ANY = -1
+    SINGLE = 0
+    PAIR = 1
+    TRIPLE = 2
+    FULLHOUSE = 3
+    STRAIGHT = 4
+    FOUROFAKIND = 5
+    PASS = 6
 
     def __str__(self) -> str:
         return self.name
@@ -315,6 +315,27 @@ def box2cards(box) -> Cards:
         if c:
             cards.append(Card(suits[i % 4], ranks[i // 4]))
     return cards
+
+
+def play2discrete(play: Play) -> int:
+    match play.combination:
+        case CardCombination.PASS:
+            return 52 * 6
+        case CardCombination.ANY:
+            return 52 * 6 + 1
+        case _:
+            return play.cards[-1].card_index() + 52 * play.combination.value
+
+
+def discrete2playlike(n: int) -> tuple[Card, CardCombination]:
+    c = n // 52
+    k = n - (52 * c)
+    suit = k % 4
+    rank = k // 4
+
+    return Card(
+        list(Card.suits)[suit], list(Card.ranks)[rank]
+    ), CardCombination(c)
 
 
 def step(self, action):

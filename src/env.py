@@ -8,8 +8,6 @@ from card import (
     CardCombination,
     Play,
     cards2box,
-    box2cards,
-    identify_combination,
 )
 from main import BigTwoGame
 from player import *
@@ -29,42 +27,27 @@ class BigTwoEnv(gym.Env):
             i for i, p in enumerate(game.players) if isinstance(p, RLAgent)
         )
 
-        self.action_space: spaces.Space = spaces.Box(
-            low=0, high=1, shape=(num_cards,), dtype=np.int8
-        )
+        # "Key cards" * combinations + pass
+        self.action_space: spaces.Space = spaces.Discrete((num_cards * 6) + 1)
         self.observation_space = spaces.Tuple(
             (
+                spaces.Discrete((num_cards * 6) + 1 + 1),  # + any
                 spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
-                spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
-                spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
-                spaces.Box(
-                    low=0, high=21, shape=(self.num_agents - 1,), dtype=np.int8
-                ),
                 spaces.Discrete(self.num_agents),
             )
         )
 
         """
         observation = {
-            "last_play": [0, 1, 0, ..., 1]      # Last (greatest) play
+            "last_play": 2                      # Last (greatest) play
             "player_hand": [1, 0, 1, ..., 0]    # Cards in the player's hand
-            "discarded": [0, 0, 0, ..., 1],     # Cards on the table
-            "opponent_hand_size": [10, 5, 3]    # Cards left for opponents
-            "last_player": 1                    # Last (grestest) playerID
         }
         """
 
     def _get_obs(self):
-        opponent_hand_sizes = [
-            len(p.hand)
-            for i, p in enumerate(self.game.players)
-            if i != self.rl_agentid
-        ]
         return (
-            cards2box(self.game.last_play.cards),
+            play2discrete(self.game.last_play),
             cards2box(self.game.players[self.rl_agentid].hand),
-            cards2box(self.game.discarded),
-            np.asarray(opponent_hand_sizes, dtype=np.int8),
             self.game.last_player,
         )
 
@@ -108,15 +91,19 @@ class BigTwoEnv(gym.Env):
 
         current_player_index: int = self.game.current_player_index
         current_player = self.game.players[current_player_index]
+        assert isinstance(current_player, RLAgent)
         LOGGER.info("%s hand: %s", current_player.name, current_player.hand)
 
-        cards = box2cards(action)
-        reward: int = len(cards)
-        play: Play = Play([], CardCombination.PASS)
-        if cards:
+        play: Play = current_player.make_play(
+            current_player.find_plays(
+                self.game.last_play, self.game.turns == 0
+            ),
+            self._get_obs(),
+        )
+        reward: int = len(play.cards)
+        if play.combination != CardCombination.PASS:
             # Remove cards from that player's hand
-            play = Play(cards, identify_combination(cards))
-            for c in list(cards):
+            for c in play.cards:
                 current_player.hand.remove(c)
 
             # Set new last Play
@@ -162,6 +149,7 @@ class BigTwoEnv(gym.Env):
                 # Check for round end
                 if self.game.check_other_passes():
                     self._new_round()
+                    reward += 20
 
         return (
             self._get_obs(),

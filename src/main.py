@@ -1,7 +1,6 @@
 from sys import argv
 import logging
 import gymnasium as gym
-import numpy as np
 from gymnasium.envs.registration import register
 from player import (
     AggressivePlayer,
@@ -10,7 +9,8 @@ from player import (
     Player,
     RLAgent,
 )
-from card import Card, CardCombination, Deck, Play, cards2box
+from card import Card, CardCombination, Deck, Play, play2discrete
+import json
 
 LOGGER = logging.getLogger(__name__)
 
@@ -51,7 +51,6 @@ class BigTwoGame:
                 break
         self.last_play: Play = Play()
         self.last_player: int = 0
-        self.discarded: list[Card] = []
         self.turns: int = 0
         self.winner: Player | None = None
 
@@ -79,8 +78,6 @@ class BigTwoGame:
             self.last_player = self.current_player_index
             for c in chosen_play.cards:
                 player.hand.remove(c)
-            for c in self.last_play.cards:
-                self.discarded.append(c)
             self.passes[self.current_player_index] = False
         else:
             LOGGER.info("%s passes", player.name)
@@ -203,9 +200,7 @@ if __name__ == "__main__":
 
     from env import BigTwoEnv
 
-    # TODO: Complete training loop
-
-    num_episodes = 1000
+    num_episodes = 100
 
     # Make the env
     env = gym.make("BigTwoRL", game=game)
@@ -222,7 +217,7 @@ if __name__ == "__main__":
             assert isinstance(agent, RLAgent)
             turn_context = agent.find_plays(game.last_play, game.turns == 0)
             play = agent.make_play(turn_context, obs)
-            action = cards2box(play.cards)
+            action = play2discrete(play)
             next_obs, reward, done, _, info = env.step(action)
 
             agent.update(
@@ -242,9 +237,17 @@ if __name__ == "__main__":
         )
 
         game.setup()
+    #Save q table
+    with open("data.py", "w") as out:
+        out.write(str(rl_agent.q_values))
+    # exit(0)
 
     # Evaluate the agent
     print(f"Agent has explored {len(rl_agent.q_values)} states")
+    actions = 0
+    for s in rl_agent.q_values:
+        actions += len(s)
+    print(f"Within these states, the agent has taken {actions} action-likes")
     num_trials = 100
     wins = 0
 
@@ -264,7 +267,7 @@ if __name__ == "__main__":
                 play = agent.make_play(turn_context, obs)
             else:
                 play = agent.make_play(turn_context)
-            action = cards2box(play.cards)
+            action = play2discrete(play)
             next_obs, reward, done, _, info = env.step(action)
 
             obs = next_obs
@@ -278,3 +281,4 @@ if __name__ == "__main__":
         game.setup()
 
     print(f"RLAgent won {wins}/{num_trials} games against 1 random agent")
+

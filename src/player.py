@@ -5,7 +5,6 @@ import itertools
 import typing
 import random
 from card import *
-import gymnasium as gym
 
 
 Cards = typing.List[Card]
@@ -376,20 +375,12 @@ class PlayItSafePlayer(Player):
         return chosen_play
 
 
-# env = gym.make("BigTwoEnv", sab=True)
-# done = False
-# observation, info = env.reset()
-# action = env.action_space.sample()
-# observation, reward, terminated, truncated, info = env.step(action)
-
-
 class RLAgent(Player):
     def __init__(
         self,
         name,
         hand,
         id,
-        # env: BigTwoEnv,
         alpha=0.1,
         initial_epsilon=1.0,
         epsilon_decay=0.005,
@@ -409,11 +400,8 @@ class RLAgent(Player):
 
     def make_obs_hashable(self, obs):
         return (
-            tuple(obs[0]),
+            obs[0],
             tuple(obs[1]),
-            tuple(obs[2]),
-            tuple(obs[3]),
-            obs[4],
         )
 
     def make_play(self, ctx: TurnContext, obs=None) -> Play:
@@ -430,31 +418,30 @@ class RLAgent(Player):
         else:
             q_obs = self.q_values[obs]
             best_q: float = max(q_obs.values())
-            best_actions = [k for k, v in q_obs.items() if v == best_q]
-            best_action: tuple = random.choice(best_actions)
-            best_action_cards = box2cards(best_action)
-            chosen_play = Play(
-                best_action_cards, identify_combination(best_action_cards)
-            )
+            best_actions: list[int] = [
+                k for k, v in q_obs.items() if v == best_q
+            ]
+            best_action: int = random.choice(best_actions)
+            key_card, key_combination = discrete2playlike(best_action)
+            best_plays: list[Play] = [
+                p
+                for p in ctx.available_plays
+                if p.cards[-1] == key_card and p.combination == key_combination
+            ]
+            chosen_play = best_plays[0]
 
         if chosen_play.combination != CardCombination.PASS:
             self.play_history.append(chosen_play)
         return chosen_play
 
-    def update(self, obs, action, reward, done: bool, next_obs, info):
+    def update(self, obs, action: int, reward, done: bool, next_obs, info):
         """Update internal Q table. Handle winning rounds and games."""
-        action = tuple(action)
         obs = self.make_obs_hashable(obs)
         next_obs = self.make_obs_hashable(next_obs)
         q_next_obs = 0
         if next_obs in self.q_values.keys():
             q_next_obs = max(self.q_values[next_obs].values())
         future_q_value = (not done) * q_next_obs
-        # self.last_state_action_q = (obs, action, self.q_values[obs][action])
-
-        if done:
-            # Can only get here if this agent ends the game
-            reward += 100
         temporal_difference = (
             reward + self.gamma * future_q_value - self.q_values[obs][action]
         )
