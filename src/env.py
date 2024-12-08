@@ -25,7 +25,9 @@ class BigTwoEnv(gym.Env):
     def __init__(self, game: BigTwoGame) -> None:
         self.game = game
         self.num_agents: int = len(game.players)
-        self.rl_agentid: int = next(i for i, p in enumerate(game.players) if isinstance(p, RLAgent))
+        self.rl_agentid: int = next(
+            i for i, p in enumerate(game.players) if isinstance(p, RLAgent)
+        )
 
         self.action_space: spaces.Space = spaces.Box(
             low=0, high=1, shape=(num_cards,), dtype=np.int8
@@ -52,8 +54,6 @@ class BigTwoEnv(gym.Env):
         }
         """
 
-        self.reset()
-
     def _get_obs(self):
         opponent_hand_sizes = [
             len(p.hand)
@@ -72,12 +72,27 @@ class BigTwoEnv(gym.Env):
         # TODO: Fix for round win
         return {"win_bonus": 5}
 
+    def _new_round(self):
+        """Resets last play and passes."""
+        # Reset last play
+        self.game.last_play = Play()
+        # Reset passes
+        self.game.passes = [False] * self.num_agents
+        LOGGER.info(
+            "%sNew round%s",
+            Color.BG_YELLOW_BRIGHT.value,
+            Color.RESET.value,
+        )
+
     def reset(
         self, *, seed: Optional[int] = None, options: Optional[dict] = None
     ):
         """Players get new hands, discarded is empty, determine who starts."""
         super().reset(seed=seed)
         self.game.setup()
+        while self.game.current_player_index != self.rl_agentid:
+            self.game.play_turn()
+            self.game.next_player()
         return self._get_obs(), self._get_info()
 
     def step(self, action):
@@ -87,15 +102,20 @@ class BigTwoEnv(gym.Env):
 
         Returns a tuple[observation (ObsType), reward (SupportsFloat), terminated (bool), truncated (bool), info (dict)]
         """
+
+        # TODO: Tune this function
+        # Give bonus for RLAgent playing more cards
+
         current_player_index: int = self.game.current_player_index
         current_player = self.game.players[current_player_index]
-        cards = box2cards(action)
         LOGGER.info("%s hand: %s", current_player.name, current_player.hand)
+
+        cards = box2cards(action)
+        reward: int = len(cards)
         play: Play = Play([], CardCombination.PASS)
         if cards:
             # Remove cards from that player's hand
             play = Play(cards, identify_combination(cards))
-            LOGGER.info("Reconstructed play %r", play)
             for c in list(cards):
                 current_player.hand.remove(c)
 
@@ -114,30 +134,34 @@ class BigTwoEnv(gym.Env):
             self.game.passes[current_player_index] = True
             LOGGER.info("%s passes", current_player.name)
 
-        self.game.round_agent_actions.append((current_player_index, play))
-
-        # TODO: Tune this function
-        # Give bonus for playing more cards
-        reward = len(play.cards)
-
         # Increments turn count
         self.game.turns += 1
 
-        # Set new current player
-        self.game.next_player()
+        # Check for game end
 
-        # If a round is over
-        if self.game.check_other_passes():
-            # Reset last_play
-            self.game.last_play = Play()
+        if self.game.is_game_over():
+            if current_player_index == self.rl_agentid:
+                reward += 100
+            # TODO: Consider how to implement loss
+        else:
+            i = 1
+            while not self.game.is_game_over() and i < self.num_agents:
+                self.game.next_player()
+                if self.game.check_other_passes():
+                    self._new_round()
+                self.game.play_turn()
+                # Increments turn count
+                self.game.turns += 1
+                # Set new current player
+                i += 1
 
-            # Reset passes
-            self.game.passes = [False] * self.num_agents
-            LOGGER.info(
-                "%sNew round%s",
-                Color.BG_YELLOW_BRIGHT.value,
-                Color.RESET.value,
-            )
+            if not self.game.is_game_over():
+                # Set new current player
+                self.game.next_player()
+
+                # Check for round end
+                if self.game.check_other_passes():
+                    self._new_round()
 
         return (
             self._get_obs(),

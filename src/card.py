@@ -222,7 +222,7 @@ class Play:
                     self.cards[0:2] = sorted(self.cards[0:2])
                     self.cards[2:] = sorted(self.cards[2:])
             case CardCombination.INVALID:
-                assert False, "Combination must be valid"
+                assert False, f"Invalid play detected: {self}"
 
     def simplify_play(self) -> str:
         s = ""

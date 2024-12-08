@@ -392,7 +392,7 @@ class RLAgent(Player):
         # env: BigTwoEnv,
         alpha=0.1,
         initial_epsilon=1.0,
-        epsilon_decay=0.1,
+        epsilon_decay=0.005,
         final_epsilon=0.1,
         gamma: float = 0.9,
     ):
@@ -420,16 +420,16 @@ class RLAgent(Player):
         assert obs
         obs = self.make_obs_hashable(obs)
         if not ctx.available_plays:
-            chosen_play = Play([], CardCombination.PASS)
-
+            # Forced to pass
+            return Play([], CardCombination.PASS)
         if np.random.random() < self.epsilon:
             # Random action
+            return super().make_play(ctx)
+        if obs not in self.q_values:
             chosen_play = super().make_play(ctx)
         else:
-            if obs not in self.q_values:
-                chosen_play = super().make_play(ctx)
             q_obs = self.q_values[obs]
-            best_q: float = max(q_obs)
+            best_q: float = max(q_obs.values())
             best_actions = [k for k, v in q_obs.items() if v == best_q]
             best_action: tuple = random.choice(best_actions)
             best_action_cards = box2cards(best_action)
@@ -446,14 +446,12 @@ class RLAgent(Player):
         action = tuple(action)
         obs = self.make_obs_hashable(obs)
         next_obs = self.make_obs_hashable(next_obs)
-        q_next_obs = (
-            max(self.q_values[next_obs].values())
-            if self.q_values[next_obs]
-            else 0
-        )
+        q_next_obs = 0
+        if next_obs in self.q_values.keys():
+            q_next_obs = max(self.q_values[next_obs].values())
         future_q_value = (not done) * q_next_obs
-        self.last_state_action_q = (obs, action, self.q_values[obs][action])
-        
+        # self.last_state_action_q = (obs, action, self.q_values[obs][action])
+
         if done:
             # Can only get here if this agent ends the game
             reward += 100
@@ -465,9 +463,9 @@ class RLAgent(Player):
             self.q_values[obs][action] + self.alpha * temporal_difference
         )
 
-    def decay_epsilon(self, step):
-        return self.final_epsilon + (self.epsilon - self.epsilon) * (
-            1 / (1 + self.epsilon_decay * step)
+    def decay_epsilon(self):
+        self.epsilon = max(
+            self.final_epsilon, self.epsilon - self.epsilon_decay
         )
 
 
