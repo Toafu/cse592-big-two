@@ -33,7 +33,6 @@ class BigTwoEnv(gym.Env):
             (
                 spaces.Discrete((num_cards * 6) + 1 + 1),  # + any
                 spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
-                spaces.Discrete(self.num_agents),
             )
         )
 
@@ -48,7 +47,6 @@ class BigTwoEnv(gym.Env):
         return (
             play2discrete(self.game.last_play),
             cards2box(self.game.players[self.rl_agentid].hand),
-            self.game.last_player,
         )
 
     def _get_info(self):

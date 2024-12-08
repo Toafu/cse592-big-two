@@ -383,7 +383,7 @@ class RLAgent(Player):
         id,
         alpha=0.1,
         initial_epsilon=1.0,
-        epsilon_decay=0.005,
+        epsilon_decay=1 / 5e8,
         final_epsilon=0.1,
         gamma: float = 0.9,
     ):
@@ -397,6 +397,7 @@ class RLAgent(Player):
         self.gamma = gamma
         self.play_history: list[Play] = []
         self.last_state_action_q = ()
+        self.current_episode: int = 1
 
     def make_obs_hashable(self, obs):
         return (
@@ -451,9 +452,10 @@ class RLAgent(Player):
         )
 
     def decay_epsilon(self):
-        self.epsilon = max(
-            self.final_epsilon, self.epsilon - self.epsilon_decay
-        )
+        self.epsilon = self.final_epsilon + (
+            self.epsilon - self.final_epsilon
+        ) * (1 / (1 + self.epsilon_decay * self.current_episode))
+        self.current_episode += 1
 
 
 class PlayerType(Enum):
