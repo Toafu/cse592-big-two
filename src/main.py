@@ -10,7 +10,6 @@ from player import (
     RLAgent,
 )
 from card import Card, CardCombination, Deck, Play, play2discrete
-import json
 
 LOGGER = logging.getLogger(__name__)
 
@@ -188,6 +187,8 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.INFO)
 
     num_episodes = 100000
+    # Change this to change deck
+    seed: int | None = 2
 
     rl_agent = RLAgent(name="RLAgent", hand=[], id=-1)
     random_agent1 = Player(name="Random1")
@@ -195,7 +196,7 @@ if __name__ == "__main__":
     random_agent3 = Player(name="Random3")
 
     game: BigTwoGame = BigTwoGame(
-        [rl_agent, random_agent1, random_agent2, random_agent3], seed=1
+        [rl_agent, random_agent1, random_agent2, random_agent3], seed=seed
     )
     register(
         id="BigTwoRL",
@@ -252,7 +253,7 @@ if __name__ == "__main__":
     num_trials = 100
 
     game: BigTwoGame = BigTwoGame(
-        [rl_agent, random_agent1, random_agent2, random_agent3], seed=1
+        [rl_agent, random_agent1, random_agent2, random_agent3], seed=seed
     )
     aggressive_agent1 = AggressivePlayer(name="Aggressive1")
     aggressive_agent2 = AggressivePlayer(name="Aggressive2")
