@@ -273,6 +273,7 @@ def train_agent(
     seed: int | None = None,
 ):
     from env import BigTwoEnv
+
     print(f"Training agent {name}...")
 
     rl_agent = RLAgent(name=name, hand=[], id=-1, alpha=alpha)
@@ -339,15 +340,27 @@ if __name__ == "__main__":
     )
     agents: list[RLAgent] = []
     agent_stats: list[list[tuple[int, list[PlayerType]]]] = []
-    rl_agent = train_agent(name="vsR3E100000", episodes=100000)
+    base_e = 50000
+    base_opps = PlayerType.Random
+    rl_agent = train_agent(
+        name=f"{base_opps.name[0]}3E{base_e}",
+        episodes=base_e,
+        opponent_types=[base_opps] * 3,
+    )
     agents.append(rl_agent)
     agent_stats.append(evaluate_against_all(rl_agent))
 
+    fixed_e = 50000
+    fixed_opps = PlayerType.Random
     for i in range(0, 5):
-        f = train_agent(name=f"vsR3E100000ED{i}", episodes=100000, seed=i)
+        f = train_agent(
+            name=f"{fixed_opps.name[0]}3E{fixed_e}ED{i}",
+            episodes=fixed_e,
+            seed=i,
+            opponent_types=[fixed_opps] * 3,
+        )
         agents.append(f)
         agent_stats.append(evaluate_against_all(f, seed=i))
-
 
     with open("results.md", "w", encoding="utf-8") as f:
         for i, a in enumerate(agents):

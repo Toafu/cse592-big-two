@@ -424,10 +424,12 @@ class RLAgent(Player):
             ]
             best_action: int = random.choice(best_actions)
             key_card, key_combination = discrete2playlike(best_action)
+            if key_combination == CardCombination.PASS:
+                return Play(combination=CardCombination.PASS)
             best_plays: list[Play] = [
                 p
                 for p in ctx.available_plays
-                if p.cards[-1] == key_card and p.combination == key_combination
+                if p.combination == key_combination and p.cards[-1] == key_card
             ]
             chosen_play = best_plays[0]
 

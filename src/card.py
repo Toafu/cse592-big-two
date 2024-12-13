@@ -327,7 +327,10 @@ def play2discrete(play: Play) -> int:
             return play.cards[-1].card_index() + 52 * play.combination.value
 
 
-def discrete2playlike(n: int) -> tuple[Card, CardCombination]:
+def discrete2playlike(n: int) -> tuple[Card | None, CardCombination]:
+    assert n <= 312
+    if n == 312:
+        return None, CardCombination.PASS
     c = n // 52
     k = n - (52 * c)
     suit = k % 4
@@ -336,29 +339,3 @@ def discrete2playlike(n: int) -> tuple[Card, CardCombination]:
     return Card(
         list(Card.suits)[suit], list(Card.ranks)[rank]
     ), CardCombination(c)
-
-
-def step(self, action):
-    assert self.action_space.contains(action)
-
-    # Validate action (ensure it's a valid play)
-    if not self.game.is_valid_play(box2cards(action)):
-        # Consider handling invalid actions (e.g., penalty, random play)
-        reward = -1  # Penalty for invalid action
-        return self._get_obs(), reward, False, self.game.is_game_over(), {}
-
-    # Execute the action for the RL agent
-    self.game.play(box2cards(action), self.rl_agentid)
-
-    # Calculate reward based on game state and player goals
-    reward = self._calculate_reward()
-
-    # Check for game termination
-    done = self.game.is_game_over()
-
-    # Get the next observation
-    observation = self._get_obs()
-
-    # Return observation, reward, termination status, and info
-    info = {}
-    return observation, reward, done, info

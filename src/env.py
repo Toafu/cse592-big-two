@@ -3,12 +3,7 @@ from typing import Optional
 import logging
 import gymnasium as gym
 from gymnasium import spaces
-from card import (
-    Color,
-    CardCombination,
-    Play,
-    cards2box,
-)
+from card import Color, CardCombination, Play, cards2box
 from main import BigTwoGame
 from player import *
 
@@ -32,9 +27,8 @@ class BigTwoEnv(gym.Env):
         self.observation_space = spaces.Tuple(
             (
                 spaces.Discrete((num_cards * 6) + 1 + 1),  # + any
-                spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8)
+                spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
             )
-            
         )
 
         """
@@ -92,14 +86,12 @@ class BigTwoEnv(gym.Env):
         current_player = self.game.players[current_player_index]
         assert isinstance(current_player, RLAgent)
         LOGGER.info("%s hand: %s", current_player.name, current_player.hand)
-
-        play: Play = current_player.make_play(
-            current_player.find_plays(
-                self.game.last_play, self.game.turns == 0
-            ),
-            self._get_obs(),
+        ctx = current_player.find_plays(
+            self.game.last_play, self.game.turns == 0
         )
-        reward: int = len(play.cards)
+        ctx.available_plays.append(Play([], CardCombination.PASS))
+        play: Play = current_player.make_play(ctx, self._get_obs())
+        reward = len(play.cards)
         if play.combination != CardCombination.PASS:
             # Remove cards from that player's hand
             for c in play.cards:
