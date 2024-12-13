@@ -32,8 +32,9 @@ class BigTwoEnv(gym.Env):
         self.observation_space = spaces.Tuple(
             (
                 spaces.Discrete((num_cards * 6) + 1 + 1),  # + any
-                spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8),
+                spaces.Box(low=0, high=1, shape=(num_cards,), dtype=np.int8)
             )
+            
         )
 
         """
@@ -127,7 +128,8 @@ class BigTwoEnv(gym.Env):
         if self.game.is_game_over():
             if current_player_index == self.rl_agentid:
                 reward += 100
-            # TODO: Consider how to implement loss
+            LOGGER.info("%s has won the game!", current_player.name)
+
         else:
             i = 1
             while not self.game.is_game_over() and i < self.num_agents:

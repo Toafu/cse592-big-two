@@ -2,16 +2,33 @@ from sys import argv
 import logging
 import gymnasium as gym
 from gymnasium.envs.registration import register
+from dataclasses import dataclass
 from player import (
     AggressivePlayer,
     HumanPlayer,
     PlayItSafePlayer,
     Player,
     RLAgent,
+    PlayerType,
 )
 from card import Card, CardCombination, Deck, Play, play2discrete
 
 LOGGER = logging.getLogger(__name__)
+
+
+@dataclass
+class AgentStats:
+    """Stores how many states agent has visited and
+    how many unique actions taken across those states.
+
+    Keeps list of evaluations in the form (wins, opponents)
+    where wins is a count over 100 games
+    """
+
+    def __init__(self, states, actions):
+        self.num_states: int = states
+        self.num_actions: int = actions
+        self.evals: list = []
 
 
 class BigTwoGame:
@@ -182,35 +199,92 @@ def get_greedy_statistics():
     print(f"Safe_1v1 won {safe_won_1v1}/{games} games against 1 random agent")
 
 
-if __name__ == "__main__":
-    if len(argv) > 1 and argv[1].lower() == "info":
-        logging.basicConfig(level=logging.INFO)
+def types_to_agents(types: list[PlayerType]) -> list[Player]:
+    opponents = []
+    for i, t in enumerate(types):
+        match t:
+            case PlayerType.Random:
+                opponents.append(Player(name=f"Random{i}"))
+            case PlayerType.Aggressive:
+                opponents.append(AggressivePlayer(name=f"Aggressive{i}"))
+            case PlayerType.PlayItSafe:
+                opponents.append(PlayItSafePlayer(name=f"PlayItSafe{i}"))
+            case _:
+                assert False, "Agent should not play against itself"
+    return opponents
 
-    num_episodes = 100000
-    # Change this to change deck
-    seed: int | None = 2
 
-    rl_agent = RLAgent(name="RLAgent", hand=[], id=-1)
-    random_agent1 = Player(name="Random1")
-    random_agent2 = Player(name="Random2")
-    random_agent3 = Player(name="Random3")
+def get_agent_stats(rlagent: RLAgent) -> AgentStats:
+    # Evaluate the agent
+    actions = 0
+    for s, _ in rlagent.q_values.items():
+        actions += len(s)
+    return AgentStats(len(rlagent.q_values), actions)
 
-    game: BigTwoGame = BigTwoGame(
-        [rl_agent, random_agent1, random_agent2, random_agent3], seed=seed
-    )
-    register(
-        id="BigTwoRL",
-        entry_point="env:BigTwoEnv",
-    )
 
+def evaluate_agent(
+    rlagent: RLAgent,
+    opponent_types: list[PlayerType] = [PlayerType.Random] * 3,
+    seed: int | None = None,
+) -> tuple[int, list[PlayerType]]:
+    assert len(opponent_types) == 3
     from env import BigTwoEnv
 
-    # Make the env
+    num_trials = 100
+    wins = 0
+    opponents: list[Player] = types_to_agents(opponent_types)
+
+    game: BigTwoGame = BigTwoGame([rlagent] + opponents, seed=seed)
     env = gym.make("BigTwoRL", game=game)
     assert isinstance(env.unwrapped, BigTwoEnv)
-    # Get our agents
-    for episode in range(num_episodes):
+
+    for _ in range(num_trials):
         obs, info = env.reset()
+        agents = game.players
+        done = False
+
+        while not done:
+            agent = agents[game.current_player_index]
+            turn_context = agent.find_plays(game.last_play, game.turns == 0)
+            if isinstance(agent, RLAgent):
+                play = agent.make_play(turn_context, obs)
+            else:
+                play = agent.make_play(turn_context)
+            action = play2discrete(play)
+            next_obs, reward, done, _, info = env.step(action)
+
+            obs = next_obs
+
+        LOGGER.info(
+            "%s has won the game!", agents[game.current_player_index].name
+        )
+        if game.current_player_index == env.unwrapped.rl_agentid:
+            wins += 1
+
+        game.setup()
+    return wins, opponent_types
+
+
+def train_agent(
+    name="RLAgent",
+    episodes: int = 100000,
+    opponent_types: list[PlayerType] = [PlayerType.Random] * 3,
+    alpha: float = 0.1,
+    seed: int | None = None,
+):
+    from env import BigTwoEnv
+    print(f"Training agent {name}...")
+
+    rl_agent = RLAgent(name=name, hand=[], id=-1, alpha=alpha)
+    opponents = types_to_agents(opponent_types)
+
+    game: BigTwoGame = BigTwoGame([rl_agent] + opponents, seed=seed)
+
+    env = gym.make("BigTwoRL", game=game)
+    assert isinstance(env.unwrapped, BigTwoEnv)
+
+    for episode in range(episodes):
+        obs, _ = env.reset()
         agents = game.players
         done = False
 
@@ -221,7 +295,7 @@ if __name__ == "__main__":
             turn_context = agent.find_plays(game.last_play, game.turns == 0)
             play = agent.make_play(turn_context, obs)
             action = play2discrete(play)
-            next_obs, reward, done, _, info = env.step(action)
+            next_obs, reward, done, _, _ = env.step(action)
 
             agent.update(
                 obs,
@@ -235,74 +309,56 @@ if __name__ == "__main__":
             obs = next_obs
 
         rl_agent.decay_epsilon()
-        LOGGER.info(
-            "%s has won the game!", agents[game.current_player_index].name
-        )
 
         game.setup()
+    print(f"Finished training {name}")
+    return rl_agent
 
-    # exit(0)
 
-    # Evaluate the agent
-    print(f"Agent has explored {len(rl_agent.q_values)} states")
-    actions = 0
-    for s in rl_agent.q_values:
-        actions += len(s)
-    print(f"Within these states, the agent has taken {actions} action-likes")
-    print(f"RLAgent's final epsilon value is {rl_agent.epsilon}")
-    num_trials = 100
-
-    game: BigTwoGame = BigTwoGame(
-        [rl_agent, random_agent1, random_agent2, random_agent3], seed=seed
+def evaluate_against_all(rlagent: RLAgent, seed: int | None = None):
+    print(f"Evaluating {rlagent.name}...")
+    stats = []
+    stats.append(evaluate_agent(rlagent, seed=seed))
+    stats.append(
+        evaluate_agent(rlagent, [PlayerType.Aggressive] * 3, seed=seed)
     )
-    aggressive_agent1 = AggressivePlayer(name="Aggressive1")
-    aggressive_agent2 = AggressivePlayer(name="Aggressive2")
-    aggressive_agent3 = AggressivePlayer(name="Aggressive3")
-    game_aggressive: BigTwoGame = BigTwoGame(
-        [rl_agent, aggressive_agent1, aggressive_agent2, aggressive_agent3],
-        seed=1,
+    stats.append(
+        evaluate_agent(rlagent, [PlayerType.PlayItSafe] * 3, seed=seed)
     )
-    playitsafe_agent1 = PlayItSafePlayer(name="PlayItSafe1")
-    playitsafe_agent2 = PlayItSafePlayer(name="PlayItSafe2")
-    playitsafe_agent3 = PlayItSafePlayer(name="PlayItSafe3")
-    game_playitsafe: BigTwoGame = BigTwoGame(
-        [rl_agent, playitsafe_agent1, playitsafe_agent2, playitsafe_agent3],
-        seed=1,
+    print(f"Finished evaluating {rlagent.name}")
+    return stats
+
+
+if __name__ == "__main__":
+    if len(argv) > 1 and argv[1].lower() == "info":
+        logging.basicConfig(level=logging.INFO)
+
+    register(
+        id="BigTwoRL",
+        entry_point="env:BigTwoEnv",
     )
-    games = [game, game_aggressive, game_playitsafe]
-    wins = [0, 0, 0]
-    for i, g in enumerate(games):
-        env = gym.make("BigTwoRL", game=g)
-        assert isinstance(env.unwrapped, BigTwoEnv)
+    agents: list[RLAgent] = []
+    agent_stats: list[list[tuple[int, list[PlayerType]]]] = []
+    rl_agent = train_agent(name="vsR3E100000", episodes=100000)
+    agents.append(rl_agent)
+    agent_stats.append(evaluate_against_all(rl_agent))
 
-        for _ in range(num_trials):
-            obs, info = env.reset()
-            agents = g.players
-            done = False
+    for i in range(0, 5):
+        f = train_agent(name=f"vsR3E100000ED{i}", episodes=100000, seed=i)
+        agents.append(f)
+        agent_stats.append(evaluate_against_all(f, seed=i))
 
-            while not done:
-                agent = agents[g.current_player_index]
-                turn_context = agent.find_plays(g.last_play, g.turns == 0)
-                if isinstance(agent, RLAgent):
-                    play = agent.make_play(turn_context, obs)
-                else:
-                    play = agent.make_play(turn_context)
-                action = play2discrete(play)
-                next_obs, reward, done, _, info = env.step(action)
 
-                obs = next_obs
-
-            LOGGER.info(
-                "%s has won the game!", agents[g.current_player_index].name
+    with open("results.md", "w", encoding="utf-8") as f:
+        for i, a in enumerate(agents):
+            stats = get_agent_stats(a)
+            f.write(f"# {a.name}\n")
+            f.write(f"- Visited {stats.num_states} states\n")
+            f.write(
+                f"- Took {stats.num_actions} Play-likes across these states\n"
             )
-            if g.current_player_index == env.unwrapped.rl_agentid:
-                wins[i] += 1
-
-            g.setup()
-
-    tests = ["Random", "Aggressive", "PlayItSafe"]
-
-    for i, t in enumerate(tests):
-        print(
-            f"RLAgent won {wins[i]}/{num_trials} games against 3 {t} agents with the same deck"
-        )
+            f.write("## Evaluations\n")
+            for s in agent_stats[i]:
+                f.write(
+                    f"- {s[0]}/100 games against `{[o.name for o in s[1]]}`\n"
+                )
