@@ -217,8 +217,8 @@ def types_to_agents(types: list[PlayerType]) -> list[Player]:
 def get_agent_stats(rlagent: RLAgent) -> AgentStats:
     # Evaluate the agent
     actions = 0
-    for s, _ in rlagent.q_values.items():
-        actions += len(s)
+    for _, a in rlagent.q_values.items():
+        actions += len(a.keys())
     return AgentStats(len(rlagent.q_values), actions)
 
 
@@ -341,7 +341,7 @@ if __name__ == "__main__":
     agents: list[RLAgent] = []
     agent_stats: list[list[tuple[int, list[PlayerType]]]] = []
     base_e = 50000
-    base_opps = PlayerType.Random
+    base_opps = PlayerType.PlayItSafe
     rl_agent = train_agent(
         name=f"{base_opps.name[0]}3E{base_e}",
         episodes=base_e,
@@ -351,10 +351,10 @@ if __name__ == "__main__":
     agent_stats.append(evaluate_against_all(rl_agent))
 
     fixed_e = 50000
-    fixed_opps = PlayerType.Random
+    fixed_opps = PlayerType.PlayItSafe
     for i in range(0, 5):
         f = train_agent(
-            name=f"{fixed_opps.name[0]}3E{fixed_e}ED{i}",
+            name=f"{fixed_opps.name[0]}3E{fixed_e}D{i}",
             episodes=fixed_e,
             seed=i,
             opponent_types=[fixed_opps] * 3,
